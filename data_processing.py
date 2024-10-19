@@ -19,7 +19,7 @@ from moviepy.audio.io.AudioFileClip import AudioFileClip
 from utils.utils import mkdir_if_missing,video_clip
 import librosa
 import librosa.display
-from pydub import AudioSegment
+# from pydub import AudioSegment
 import wave
 from ast import literal_eval
 import soundfile as sf
@@ -36,9 +36,9 @@ def standardization(data):
 
 class utils_audio():
     def __init__(self):
-        self.dataset_path_train = r'D:\CMZ\dataset_new\audio_without_background_split_nocoverage_train'
-        self.dataset_path_test = r'D:\CMZ\dataset_new\audio_without_background_split_nocoverage_test'
-        self.dataset_path = r'D:\CMZ\dataset\audio_split\with_background\audio'
+        self.dataset_path_train = r'D:\project\PaperCode\EstimatingRainFall\SARIDDATA\SARID\split\audio_without_background_split_nocoverage_train'
+        self.dataset_path_test = r'D:\project\PaperCode\EstimatingRainFall\SARIDDATA\SARID\split\audio_without_background_split_nocoverage_test'
+        self.dataset_path = r'D:\project\PaperCode\EstimatingRainFall\SARIDDATA\SARID\audio'
         self.n_mfcc = 40
     def get_distance(self,distances):
         # 如果最后一个噪音的结束时间戳到音频duration之间相差不到三秒，就放弃
@@ -548,15 +548,15 @@ if __name__ == '__main__':
     file_utils = utils_file()
     audio_utils = utils_audio()
     static_utils = utils_static()
-
-    '''
-    # surveillance data ----->  normal video data
-    '''
+    #
+    # '''
+    # # surveillance data ----->  normal video data
+    # '''
     # base_path = r'D:\CMZ\数据'
     # metadata_path = r'D:\CMZ\数据\file_name_time.csv'
     # metadata = pd.read_csv(metadata_path)
     # files_path = glob.glob(os.path.join(base_path,'*.mp4'))
-    # convert_path = r'D:\CMZ\convert'
+    # convert_path = r'D:\project\PaperCode\EstimatingRainFall\SARIDCONVERTDATA\convert'
     # converted_files = glob.glob(os.path.join(convert_path,'*.mp4'))
     # for file_path in tqdm(files_path):
     #     file_name = os.path.split(file_path)[-1]
@@ -570,9 +570,9 @@ if __name__ == '__main__':
     #     seconds = int(duration[2])
     #     save_path = os.path.join(convert_path,file_name)
     #     file_utils.convert_from_surveillance_camera(file_path,save_path,(hour,minute,seconds))
-    '''
-    # generate dataset
-    '''
+    # '''
+    # # generate dataset
+    # '''
     # meteorological_path = r'convert_csv'
     # metadata_path = r'file_name_time.csv'
     # meteorological_paths = glob.glob(os.path.join(meteorological_path,'*.csv'))
@@ -581,21 +581,21 @@ if __name__ == '__main__':
     # audio_save_path = r'dataset\audio'
     # for item in tqdm(meteorological_paths):
     #     file_utils.generate_dataset(item,metadata_path,video_path,video_save_path,audio_save_path)
-
-
-    '''
+    #
+    #
+    #
     # static_utils = utils_static()
     # path = r'D:\CMZ\dataset\static_.xlsx'
     # static_utils.dataset_analysis(path,'xlsx')
-    # split train and test
-
+    # # split train and test
+    #
     # file_path = r'D:\CMZ\dataset\audio'
     # train_path = r'D:\CMZ\dataset\audio_train'
     # test_path = r'D:\CMZ\dataset\audio_test'
     # file_utils.spliy_train_test(file_path,train_path,test_path,'mp3')
-
-
-    # 分割音频，设置分割长度，重叠度等
+    # #
+    # #
+    # # # 分割音频，设置分割长度，重叠度等
     # data_path = r'D:\CMZ\dataset_new\audio_without_background'
     # save_path = r'D:\CMZ\dataset_new\audio_without_background_split_nocoverage'
     # files = glob.glob(os.path.join(data_path,'*.mp3'))
@@ -607,14 +607,21 @@ if __name__ == '__main__':
     # for file in tqdm(files):
     #     audio_utils.audio_split(file, 4, 4, save_path)
 
-    '''
+
     # Acoustic feature extraction
     # This part is applied to generate the dataset (data.npy, label.csv) in the baseline training code
     # The input is the filefolder of data (train/test), it will produce the .npy file for feature data, and the .csv for label data.
     # Notice that if you want to generate different acoustic features (such as MFCC, Mel, STFT), you need to go to this method and apply different methods of feature extraction
-    # X_mfcc,Y_mfcc = audio_utils.preprocessing_classification(audio_utils.dataset_path_train)
-    # Y_mfcc.to_csv('train_label_nmfcc400.csv')
-    # np.save("train_mfcc_nmfcc400", X_mfcc)
-    #
+    # train
+    X_mfcc_train,Y_mfcc_train = audio_utils.preprocessing(audio_utils.dataset_path_train)
+    Y_mfcc_train.to_csv('data/train_label_nmfcc400.csv')
+    np.save("data/train_mfcc_nmfcc400", X_mfcc_train)
+
+    # test
+    X_mfcc_test,Y_mfcc_test = audio_utils.preprocessing(audio_utils.dataset_path_test)
+    Y_mfcc_test.to_csv('data/test_label_nmfcc400.csv')
+    np.save("data/test_mfcc_nmfcc400", X_mfcc_test)
+
+
   
 

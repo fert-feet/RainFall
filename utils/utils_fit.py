@@ -9,7 +9,7 @@ import torch
 from tqdm import tqdm
 import torch.nn.functional as F
 
-from utils.utils import get_lr
+from utils import get_lr
 
 
 def fit_one_epoch(model_train, model, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen,

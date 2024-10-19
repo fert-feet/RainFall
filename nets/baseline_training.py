@@ -10,14 +10,14 @@ import torch
 import torch.nn.functional as F
 
 
-def focal_loss(pred, target):
-    loss = F.cross_entropy(pred,target)
-
-    if num_pos == 0:
-        loss = -neg_loss
-    else:
-        loss = -(pos_loss + neg_loss) / num_pos
-    return loss
+# def focal_loss(pred, target):
+#     loss = F.cross_entropy(pred,target)
+#
+#     if num_pos == 0:
+#         loss = -neg_loss
+#     else:
+#         loss = -(pos_loss + neg_loss) / num_pos
+#     return loss
 
 
 def weights_init(net, init_type='normal', init_gain=0.02):

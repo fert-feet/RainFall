@@ -6,7 +6,7 @@
 
 import math
 import random
-
+import logging as log
 import numpy as np
 import torch
 import torchaudio.transforms
@@ -15,7 +15,7 @@ import librosa
 import os
 import pandas as pd
 import torch.nn.functional as F
-from imblearn.over_sampling import SMOTE
+# from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
 
 
@@ -35,7 +35,7 @@ class USRADataset(Dataset):
         # pay attention, for the code "self.feature[index].reshape({dimension})", you need to matches the acoustic features dimension to model input dimension
         # for example, if feature is MFCC, network is Transformer, you need to check the "n_model" and other setting of the Transformerencoder, to make sure that
         # the MFCC feature array could be correctly send to model and do a forward calculation.
-        feature_item = self.feature[index].reshape({dimension})
+        feature_item = self.feature[index].reshape(173, 40)
         rainfall_intensity = self.label.iloc[index]['RAINFALL INTENSITY']
         return feature_item,rainfall_intensity
 

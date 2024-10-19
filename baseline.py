@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-from utils.dataloader import USRADataset,USRADataset_collate,USRADataset_CR,USRADataset_collate_CR
+from utils.dataloader import USRADataset,USRADataset_collate #USRADataset_CR,USRADataset_collate_CR
 from torch.utils.data import DataLoader
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 from nets.general_net import BaseCNN_Conv
@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
 from utils.draw import result_show
-import torchinfo
+# import torchinfo
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -27,10 +27,14 @@ num_epochs = 100
 batch_size = 64
 learning_rate = 0.001
 
-train_features_path = f'{data features train}.npy'
-train_labels_path = f'{label training}.csv'
-test_features_path = f'{data features test}.npy'
-test_labels_path = f'{label test}.csv'
+# train_features_path = f'{data features train}.npy'
+# train_labels_path = f'{label training}.csv'
+# test_features_path = f'{data features test}.npy'
+# test_labels_path = f'{label test}.csv'
+train_features_path = 'data\\train_mfcc_nmfcc400.npy'
+train_labels_path = 'data\\train_label_nmfcc400.csv'
+test_features_path = 'data\\test_mfcc_nmfcc400.npy'
+test_labels_path = 'data\\test_label_nmfcc400.csv'
 train_dataset = USRADataset(train_labels_path, train_features_path)
 val_dataset = USRADataset(test_labels_path, test_features_path)
 train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size,
