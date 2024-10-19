@@ -1,3 +1,6 @@
+
+# AuthorshipUrl：[Meizhen2023](https://github.com/Meizhen2023/SARID)
+
 # SARID (Surveillance-Audio-Rainfall-Intensity-Dataset)
 
 # UPdate on 04/09/2023. SARID V.1. 
