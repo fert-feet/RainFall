@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 import torch
 import torch.nn as nn
 import torchvision
@@ -31,10 +32,10 @@ learning_rate = 0.001
 # train_labels_path = f'{label training}.csv'
 # test_features_path = f'{data features test}.npy'
 # test_labels_path = f'{label test}.csv'
-train_features_path = 'data\\train_mfcc_nmfcc400.npy'
-train_labels_path = 'data\\train_label_nmfcc400.csv'
-test_features_path = 'data\\test_mfcc_nmfcc400.npy'
-test_labels_path = 'data\\test_label_nmfcc400.csv'
+train_features_path = './data/train_mfcc_nmfcc400.npy'
+train_labels_path = './data/train_label_nmfcc400.csv'
+test_features_path = './data/test_mfcc_nmfcc400.npy'
+test_labels_path = './data/test_label_nmfcc400.csv'
 train_dataset = USRADataset(train_labels_path, train_features_path)
 val_dataset = USRADataset(test_labels_path, test_features_path)
 train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size,
@@ -149,9 +150,15 @@ optimizer = {
 # #   Formula for obtaining a decrease in the learning rate
 # # ---------------------------------------#
 lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, num_epochs)
+
+train_loss_list = []
+test_loss_list = []
+
 for epoch in range(num_epochs):
+    total_loss = 0
     set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
     model.train()
+    size = len(train_loader)
     for i, (images,labels_intensity) in enumerate(train_loader):
         images = images.to(device)
 
@@ -161,6 +168,7 @@ for epoch in range(num_epochs):
         rainfall_intensity = model(images)
         r_loss = criterion_r(rainfall_intensity, labels_intensity.view([-1, 1]))
         loss = r_loss
+        total_loss += loss.item()
 
         # Backward and optimize
         optimizer.zero_grad()
@@ -170,8 +178,10 @@ for epoch in range(num_epochs):
         if (i + 1) % 20 == 0:
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                   .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
+    train_loss_list.append(total_loss / size)
     torch.save(model.state_dict(), 'model_epoch_R.ckpt')
 
+    # Test
     model.load_state_dict(torch.load('model_epoch_R.ckpt'))
     model.eval()
 
@@ -191,18 +201,37 @@ for epoch in range(num_epochs):
                 rainfall_intensity = model(acoustic_feaure[index:acoustic_feaure.shape[0]].to(torch.float))
                 outputs = torch.cat((outputs, rainfall_intensity))
     outputs = np.array(outputs.squeeze().cpu(),dtype=float)
+    print("model_outputs = {}".format(outputs))
     labels = val_dataset.label['RAINFALL INTENSITY'].to_numpy()
+    print("model_labels = {}".format(len(labels)))
     MSE = mean_squared_error(labels, outputs)
     RMSE = np.sqrt(mean_squared_error(labels, outputs))
     MAE = mean_absolute_error(labels, outputs)
     R2 = r2_score(labels, outputs)
-    print(R2)
+    print('R2_Value = {}'.format(R2))
     R2_list.append(R2)
     RMSE_list.append(RMSE)
     MSE_list.append(MSE)
     MAE_list.append(MAE)
+
+    # four plots draw
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].plot(range(0, epoch + 1), train_loss_list, 'b', label='Train Loss')
+    axs[0, 1].plot(range(0, epoch + 1), R2_list, 'r', label='R2')
+    axs[1, 0].plot(range(0, epoch + 1), MSE_list, 'g', label='MSE')
+    axs[1, 1].plot(range(0, epoch + 1), MAE_list, label='MAE')
+    fig.legend()
+    fig.show()
+
+    # test result and labels
+    # fig, ax = plt.subplots()
+    # ax.plot(outputs, label='test_output')
+    # ax.plot(labels, label='test_label')
+    # fig.legend()
+    # fig.show()
+
     if R2>R2_max:
         torch.save(model.state_dict(), 'model_epoch_best_R.ckpt')
         R2_max=R2
-        result_draw = result_show(labels,outputs,R2,RMSE,MSE,MAE)
-        result_draw.draw()
+        # result_draw = result_show(labels,outputs,R2,RMSE,MSE,MAE)
+        # result_draw.draw()

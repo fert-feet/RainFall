@@ -120,5 +120,5 @@ class result_show():
         cbar.ax.set_title('Counts', fontdict=colorbarfontdict, pad=8)
         cbar.ax.tick_params(labelsize=12, direction='in')
         cbar.ax.set_yticklabels(['0', '10', '20', '30', '>40'], family='Times New Roman')
-        plt.style.use('seaborn-darkgrid')
+        # plt.style.use('seaborn-darkgrid')
         plt.show()
