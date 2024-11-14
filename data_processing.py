@@ -36,9 +36,9 @@ def standardization(data):
 
 class utils_audio():
     def __init__(self):
-        self.dataset_path_train = r'D:\project\PaperCode\EstimatingRainFall\SARIDDATA\SARID\split\audio_without_background_split_nocoverage_train'
-        self.dataset_path_test = r'D:\project\PaperCode\EstimatingRainFall\SARIDDATA\SARID\split\audio_without_background_split_nocoverage_test'
-        self.dataset_path = r'D:\project\PaperCode\EstimatingRainFall\SARIDDATA\SARID\audio'
+        self.dataset_path_train = '../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_train'
+        self.dataset_path_test = '../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_test'
+        self.dataset_path = '../SARIDDATA/SARID/audio'
         self.n_mfcc = 40
     def get_distance(self,distances):
         # 如果最后一个噪音的结束时间戳到音频duration之间相差不到三秒，就放弃

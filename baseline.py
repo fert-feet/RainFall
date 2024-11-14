@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-from utils.dataloader import USRADataset,USRADataset_collate #USRADataset_CR,USRADataset_collate_CR
+from utils.dataloader import USRADataset,USRADataset_collate
 from torch.utils.data import DataLoader
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 from nets.general_net import BaseCNN_Conv
@@ -26,12 +26,9 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # # Hyper parameters
 num_epochs = 100
 batch_size = 64
-learning_rate = 0.001
+learning_rate = 0.09
 
-# train_features_path = f'{data features train}.npy'
-# train_labels_path = f'{label training}.csv'
-# test_features_path = f'{data features test}.npy'
-# test_labels_path = f'{label test}.csv'
+# train/test data path
 train_features_path = './data/train_mfcc_nmfcc400.npy'
 train_labels_path = './data/train_label_nmfcc400.csv'
 test_features_path = './data/test_mfcc_nmfcc400.npy'
@@ -90,19 +87,19 @@ class LSTM(nn.Module):
 class Transformer(nn.Module):
     def __init__(self):
         super(Transformer, self).__init__()
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=40, nhead=5, batch_first=True, dim_feedforward=512)
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=40, nhead=5, dim_feedforward=512)
         self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
         self.layer1 = nn.Sequential(
             self.transformer_encoder)
         self.layer4 = nn.Sequential(
-            nn.AdaptiveAvgPool2d(16))
+            nn.AdaptiveAvgPool2d(16)) # 2d pooling input (batch_size, seq, time)
         self.fc1 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, 1)
 
     def forward(self, x):
-        out = self.layer1(x).transpose(2,1)
-        # out = self.layer2(out)
-        # out = self.layer3(out)
+        x = x.permute(2, 0, 1)
+        out = self.layer1(x)
+        out = out.permute(1, 0, 2)
         out = self.layer4(out)
         out = out.reshape(out.size(0), -1)
         out = self.fc1(out)
@@ -185,10 +182,11 @@ for epoch in range(num_epochs):
     model.load_state_dict(torch.load('model_epoch_R.ckpt'))
     model.eval()
 
-    acoustic_feaure = val_dataset.feature.transpose(0, 2, 1)
+    acoustic_feaure = val_dataset.feature
     outputs = []
     step = 16
     with torch.no_grad():
+        # split input into slice
         acoustic_feaure = torch.tensor(acoustic_feaure).cuda()
         for index in tqdm(range(0,acoustic_feaure.shape[0],step)):
             if index ==0:
@@ -201,9 +199,7 @@ for epoch in range(num_epochs):
                 rainfall_intensity = model(acoustic_feaure[index:acoustic_feaure.shape[0]].to(torch.float))
                 outputs = torch.cat((outputs, rainfall_intensity))
     outputs = np.array(outputs.squeeze().cpu(),dtype=float)
-    print("model_outputs = {}".format(outputs))
     labels = val_dataset.label['RAINFALL INTENSITY'].to_numpy()
-    print("model_labels = {}".format(len(labels)))
     MSE = mean_squared_error(labels, outputs)
     RMSE = np.sqrt(mean_squared_error(labels, outputs))
     MAE = mean_absolute_error(labels, outputs)
@@ -213,25 +209,3 @@ for epoch in range(num_epochs):
     RMSE_list.append(RMSE)
     MSE_list.append(MSE)
     MAE_list.append(MAE)
-
-    # four plots draw
-    fig, axs = plt.subplots(2, 2)
-    axs[0, 0].plot(range(0, epoch + 1), train_loss_list, 'b', label='Train Loss')
-    axs[0, 1].plot(range(0, epoch + 1), R2_list, 'r', label='R2')
-    axs[1, 0].plot(range(0, epoch + 1), MSE_list, 'g', label='MSE')
-    axs[1, 1].plot(range(0, epoch + 1), MAE_list, label='MAE')
-    fig.legend()
-    fig.show()
-
-    # test result and labels
-    # fig, ax = plt.subplots()
-    # ax.plot(outputs, label='test_output')
-    # ax.plot(labels, label='test_label')
-    # fig.legend()
-    # fig.show()
-
-    if R2>R2_max:
-        torch.save(model.state_dict(), 'model_epoch_best_R.ckpt')
-        R2_max=R2
-        # result_draw = result_show(labels,outputs,R2,RMSE,MSE,MAE)
-        # result_draw.draw()
