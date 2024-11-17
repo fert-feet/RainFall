@@ -37,7 +37,7 @@ class USRADataset(Dataset):
         # pay attention, for the code "self.feature[index].reshape({dimension})", you need to matches the acoustic features dimension to model input dimension
         # for example, if feature is MFCC, network is Transformer, you need to check the "n_model" and other setting of the Transformerencoder, to make sure that
         # the MFCC feature array could be correctly send to model and do a forward calculation.
-        feature_item = self.feature[index].reshape(40, 173)
+        feature_item = self.feature[index].reshape(128, 173)
         rainfall_intensity = self.label.iloc[index]['RAINFALL INTENSITY']
         return feature_item,rainfall_intensity
 

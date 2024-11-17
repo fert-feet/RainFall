@@ -4,10 +4,12 @@
 # @File : draw.py
 # @desc :
 import numpy as np
+import logging
 import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+from matplotlib.pyplot import xticks
 # from utils.dataloader import USRADataset,USRADataset_collate,USRADataset_CR,USRADataset_collate_CR
 from torch.utils.data import DataLoader
 # from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
@@ -20,14 +22,16 @@ from tqdm import tqdm
 from sklearn.metrics import mean_squared_error  # 均方误差
 from sklearn.metrics import mean_absolute_error  # 平方绝对误差
 from sklearn.metrics import r2_score  # R square
+
 class result_show():
-    def __init__(self,labels,outputs,R2,RMSE,MSE,MAE):
+    def __init__(self, labels, outputs, R2, RMSE, MSE, MAE):
         self.labels = labels
         self.outputs = outputs
         self.R2 = R2
         self.RMSE = RMSE
         self.MSE = MSE
         self.MAE = MAE
+        self.img_save_path = "../data/img/result.png"
     def draw(self):
         test_labels = self.labels
         predictions = self.outputs
@@ -122,3 +126,12 @@ class result_show():
         cbar.ax.set_yticklabels(['0', '10', '20', '30', '>40'], family='Times New Roman')
         # plt.style.use('seaborn-darkgrid')
         plt.show()
+
+    def simply_draw(self):
+        fig, ax = plt.subplots()
+        print(self.outputs)
+        print(self.labels)
+        ax.plot(self.labels[::50], label="real")
+        ax.plot(self.outputs[::50], label="model_outputs")
+        ax.legend()
+        # fig.show()

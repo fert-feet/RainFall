@@ -5,6 +5,7 @@
 # @desc :
 import random
 import shutil
+from config import config
 import itertools
 import moviepy
 import os
@@ -25,6 +26,7 @@ from ast import literal_eval
 import soundfile as sf
 
 
+
 def min_max_normalization(x):
     x_min = np.min(x)
     x_max = np.max(x)
@@ -39,7 +41,8 @@ class utils_audio():
         self.dataset_path_train = '../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_train'
         self.dataset_path_test = '../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_test'
         self.dataset_path = '../SARIDDATA/SARID/audio'
-        self.n_mfcc = 40
+        self.n_mfcc = config.N_MFCC
+        self.n_mel = config.N_MEL
     def get_distance(self,distances):
         # 如果最后一个噪音的结束时间戳到音频duration之间相差不到三秒，就放弃
         if (distances[1]-distances[0])<3:return True
@@ -612,15 +615,15 @@ if __name__ == '__main__':
     # This part is applied to generate the dataset (data.npy, label.csv) in the baseline training code
     # The input is the filefolder of data (train/test), it will produce the .npy file for feature data, and the .csv for label data.
     # Notice that if you want to generate different acoustic features (such as MFCC, Mel, STFT), you need to go to this method and apply different methods of feature extraction
-    # train
-    X_mfcc_train,Y_mfcc_train = audio_utils.preprocessing(audio_utils.dataset_path_train)
-    Y_mfcc_train.to_csv('data/train_label_nmfcc400.csv')
-    np.save("data/train_mfcc_nmfcc400", X_mfcc_train)
+    # mfcc_train
+    X_train,Y_train = audio_utils.preprocessing(audio_utils.dataset_path_train)
+    Y_train.to_csv(f'data/{config.NAME_TRAIN_LABEL_FILE}.csv')
+    np.save(f"data/{config.NAME_TRAIN_FEATURES_FILE}", X_train)
 
-    # test
-    X_mfcc_test,Y_mfcc_test = audio_utils.preprocessing(audio_utils.dataset_path_test)
-    Y_mfcc_test.to_csv('data/test_label_nmfcc400.csv')
-    np.save("data/test_mfcc_nmfcc400", X_mfcc_test)
+    # mfcc_test
+    X_test,Y_test = audio_utils.preprocessing(audio_utils.dataset_path_test)
+    Y_test.to_csv(f'data/{config.NAME_TEST_LABEL_FILE}.csv')
+    np.save(f"data/{config.NAME_TEST_FEATURES_FILE}", X_test)
 
 
   

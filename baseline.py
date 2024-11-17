@@ -18,21 +18,22 @@ from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
 from utils.draw import result_show
+from config import config
 # import torchinfo
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # # Hyper parameters
-num_epochs = 100
-batch_size = 64
-learning_rate = 0.09
+num_epochs = config.NUM_EPOCHES
+batch_size = config.BATCH_SIZE
+learning_rate = config.LEARNING_RATE
 
 # train/test data path
-train_features_path = './data/train_mfcc_nmfcc400.npy'
-train_labels_path = './data/train_label_nmfcc400.csv'
-test_features_path = './data/test_mfcc_nmfcc400.npy'
-test_labels_path = './data/test_label_nmfcc400.csv'
+train_features_path = f'./data/{config.NAME_TRAIN_FEATURES_FILE}.npy'
+train_labels_path = f'./data/{config.NAME_TRAIN_LABEL_FILE}.csv'
+test_features_path = f'./data/{config.NAME_TEST_FEATURES_FILE}.npy'
+test_labels_path = f'./data/{config.NAME_TEST_LABEL_FILE}.csv'
 train_dataset = USRADataset(train_labels_path, train_features_path)
 val_dataset = USRADataset(test_labels_path, test_features_path)
 train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size,
@@ -87,7 +88,7 @@ class LSTM(nn.Module):
 class Transformer(nn.Module):
     def __init__(self):
         super(Transformer, self).__init__()
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=40, nhead=5, dim_feedforward=512)
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=128, nhead=8, dim_feedforward=512)
         self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
         self.layer1 = nn.Sequential(
             self.transformer_encoder)
@@ -142,18 +143,21 @@ optimizer = {
     'sgd': optim.SGD(model.parameters(), Init_lr_fit, momentum=momentum, nesterov=True,
                      weight_decay=weight_decay)
 }[optimizer_type]
+
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=num_epochs*batch_size)
+
 #
 # # ---------------------------------------#
 # #   Formula for obtaining a decrease in the learning rate
 # # ---------------------------------------#
-lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, num_epochs)
+# lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, num_epochs)
 
 train_loss_list = []
 test_loss_list = []
 
 for epoch in range(num_epochs):
     total_loss = 0
-    set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
+    # set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
     model.train()
     size = len(train_loader)
     for i, (images,labels_intensity) in enumerate(train_loader):
@@ -171,15 +175,16 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         if (i + 1) % 20 == 0:
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                   .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
     train_loss_list.append(total_loss / size)
-    torch.save(model.state_dict(), 'model_epoch_R.ckpt')
+    torch.save(model.state_dict(), f'./logs/{config.NAME_MODEL_PERFORMANCE_FILE}.ckpt')
 
     # Test
-    model.load_state_dict(torch.load('model_epoch_R.ckpt'))
+    model.load_state_dict(torch.load(f'./logs/{config.NAME_MODEL_PERFORMANCE_FILE}.ckpt'))
     model.eval()
 
     acoustic_feaure = val_dataset.feature
@@ -209,3 +214,6 @@ for epoch in range(num_epochs):
     RMSE_list.append(RMSE)
     MSE_list.append(MSE)
     MAE_list.append(MAE)
+
+    draw_tool = result_show(labels, outputs, R2, RMSE, MSE, MAE)
+    draw_tool.simply_draw()
