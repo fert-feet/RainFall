@@ -1,24 +1,15 @@
 import numpy as np
-import logging
-import torch
-import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
 from utils.dataloader import USRADataset,USRADataset_collate
 from torch.utils.data import DataLoader
-from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
-from nets.general_net import BaseCNN_Conv
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import pandas as pd
-from scipy import optimize
 from tqdm import tqdm
 from nets.general_net import *
 from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
 from utils.draw import result_show
-from config import config
+from utils import config
+
 # import torchinfo
 
 # Device configuration

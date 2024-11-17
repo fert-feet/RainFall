@@ -5,24 +5,18 @@
 # @desc :
 import random
 import shutil
-from config import config
-import itertools
-import moviepy
-import os
+from utils import config
 import glob
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
-import time
 from datetime import datetime
 from moviepy.editor import *
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-from utils.utils import mkdir_if_missing,video_clip
+from utils.utils import video_clip
 import librosa
 import librosa.display
 # from pydub import AudioSegment
-import wave
-from ast import literal_eval
 import soundfile as sf
 
 
@@ -318,7 +312,7 @@ class utils_audio():
         frames_max = 0
         for index,file_path in enumerate(tqdm(files)):
             # Extract MFCCs (do not add padding)
-            mfccs = self.get_mfcc(file_path,0,self.n_mfcc)
+            mfccs = self.get_mel_spectrogram(file_path, 0,n_mels=self.n_mel)
             # Save current frame count
             num_frames = mfccs.shape[1]
             # Add row (feature)
@@ -615,12 +609,12 @@ if __name__ == '__main__':
     # This part is applied to generate the dataset (data.npy, label.csv) in the baseline training code
     # The input is the filefolder of data (train/test), it will produce the .npy file for feature data, and the .csv for label data.
     # Notice that if you want to generate different acoustic features (such as MFCC, Mel, STFT), you need to go to this method and apply different methods of feature extraction
-    # mfcc_train
+    # train
     X_train,Y_train = audio_utils.preprocessing(audio_utils.dataset_path_train)
     Y_train.to_csv(f'data/{config.NAME_TRAIN_LABEL_FILE}.csv')
     np.save(f"data/{config.NAME_TRAIN_FEATURES_FILE}", X_train)
 
-    # mfcc_test
+    # test
     X_test,Y_test = audio_utils.preprocessing(audio_utils.dataset_path_test)
     Y_test.to_csv(f'data/{config.NAME_TEST_LABEL_FILE}.csv')
     np.save(f"data/{config.NAME_TEST_FEATURES_FILE}", X_test)
