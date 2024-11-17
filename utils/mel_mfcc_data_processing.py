@@ -21,6 +21,34 @@ class utils_audio():
         self.n_mel = config.N_MEL
         self.feature_type = config.NAME_FEATURES_PROJECT
 
+    def pre_processing(self, file_path):
+        files = glob.glob(os.path.join(file_path,'*.mp3'))
+        labels = list(map(lambda x:os.path.split(x)[-1].split('_'),files))
+        Y = pd.DataFrame(labels).iloc[:,1:6]   #提取雨量，温度，湿度，气压，风速，
+        Y.columns=['RAINFALL INTENSITY','TEMPERATURE','HUMIDITY','ATMOSPHERE PRESSURE','WIND SPEED']
+
+        features = []
+        for index, file_path in enumerate(tqdm(files)):
+
+            extracted_feature = self.get_mfcc(file_path) if self.feature_type == config.NAME_FEATURES_MFCC else self.get_mel_spectrogram(file_path)
+            features.append(extracted_feature)
+
+        X = np.array(features)
+        return X, Y
+
+    def get_mel_spectrogram(self,file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
+        try:
+            y, sr = librosa.load(file_path)
+            normalized_y = librosa.util.normalize(y)
+            mel = librosa.feature.melspectrogram(y=normalized_y, sr=sr, n_mels=self.n_mel)
+            normalized_mel = librosa.util.normalize(mel)
+
+        except Exception as e:
+            print("Error parsing wavefile: ", e)
+            return None
+
+        return normalized_mel
+
     def get_mfcc(self,file_path, mfcc_max_padding=0):
         try:
             y, sr = librosa.load(file_path)
@@ -32,22 +60,6 @@ class utils_audio():
             print("Error parsing wavefile: ", e)
             return None
         return normalized_mfcc
-
-    def pre_processing(self, file_path):
-        files = glob.glob(os.path.join(file_path,'*.mp3'))
-        labels = list(map(lambda x:os.path.split(x)[-1].split('_'),files))
-        Y = pd.DataFrame(labels).iloc[:,1:6]   #提取雨量，温度，湿度，气压，风速，
-        Y.columns=['RAINFALL INTENSITY','TEMPERATURE','HUMIDITY','ATMOSPHERE PRESSURE','WIND SPEED']
-
-        features = []
-        for index, file_path in enumerate(tqdm(files)):
-            extracted_feature = self.get_mfcc(file_path)
-            features.append(extracted_feature)
-
-        X = np.array(features)
-        return X, Y
-    def get_mel_spectrogram(self,file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
-        pass
 
 
 if __name__ == '__main__':
