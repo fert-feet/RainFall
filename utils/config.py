@@ -3,6 +3,11 @@ NUM_EPOCHES = 100
 BATCH_SIZE = 64
 LEARNING_RATE = 0.001
 
+# model
+NAME_MULTI = "multi"
+NAME_SINGLE_TRANS = "single"
+NAME_MODEL_PROJECT = NAME_MULTI
+
 # feature extract
 N_MFCC = 128
 N_MEL = 128
@@ -13,12 +18,19 @@ NAME_FEATURES_PNCC = "npcc"
 NAME_FEATURES_PROJECT = NAME_FEATURES_MEL
 NUM_N_FEATURE = N_MEL
 
-# feature file
+# TODO change label files name to global, because mel and mfcc share same label file
+# feature and label files (single input)
 NAME_TRAIN_LABEL_FILE = f"train_label_{NAME_FEATURES_PROJECT}_n_{NUM_N_FEATURE}"
 NAME_TRAIN_FEATURES_FILE = f"train_features_{NAME_FEATURES_PROJECT}_n_{NUM_N_FEATURE}"
 NAME_TEST_LABEL_FILE = f"test_label_{NAME_FEATURES_PROJECT}_n_{NUM_N_FEATURE}"
 NAME_TEST_FEATURES_FILE = f"test_features_{NAME_FEATURES_PROJECT}_n_{NUM_N_FEATURE}"
 
+# feature files (multiple inputs)
+NAME_MFCC_TRAIN_FEATURES_FILE = f"train_features_{NAME_FEATURES_MFCC}_n_{N_MFCC}"
+NAME_MEL_TRAIN_FEATURES_FILE = f"train_features_{NAME_FEATURES_MEL}_n_{N_MEL}"
+NAME_MFCC_TEST_FEATURES_FILE = f"test_features_{NAME_FEATURES_MFCC}_n_{N_MFCC}"
+NAME_MEL_TEST_FEATURES_FILE = f"test_features_{NAME_FEATURES_MEL}_n_{N_MEL}"
+
 # log file
-NAME_MODEL_PERFORMANCE_FILE = f"model_feature_{NAME_FEATURES_PROJECT}_epoch_{NUM_EPOCHES}_batch_{BATCH_SIZE}"
-NAME_MODEL_PERFORMANCE_BEST_FILE = f"model_feature_{NAME_FEATURES_PROJECT}_epoch_{NUM_EPOCHES}_batch_{BATCH_SIZE}_best"
+NAME_MODEL_PERFORMANCE_FILE = f"model_{NAME_MODEL_PROJECT}_feature_{NAME_FEATURES_PROJECT}_epoch_{NUM_EPOCHES}_batch_{BATCH_SIZE}"
+NAME_MODEL_PERFORMANCE_BEST_FILE = f"model_{NAME_MODEL_PROJECT}_feature_{NAME_FEATURES_PROJECT}_epoch_{NUM_EPOCHES}_batch_{BATCH_SIZE}_best"

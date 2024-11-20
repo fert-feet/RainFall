@@ -1,4 +1,6 @@
 import numpy as np
+
+from model.Base_Model import BaseModel
 from utils.dataloader import USRADataset,USRADataset_collate
 from torch.utils.data import DataLoader
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
@@ -21,16 +23,27 @@ batch_size = config.BATCH_SIZE
 learning_rate = config.LEARNING_RATE
 
 # train/test data path
-train_features_path = f'./data/{config.NAME_TRAIN_FEATURES_FILE}.npy'
+mfcc_train_features_path = f'./data/{config.NAME_MFCC_TRAIN_FEATURES_FILE}.npy'
+mfcc_test_features_path = f'./data/{config.NAME_MFCC_TEST_FEATURES_FILE}.npy'
+mel_train_features_path = f'./data/{config.NAME_MEL_TRAIN_FEATURES_FILE}.npy'
+mel_test_features_path = f'./data/{config.NAME_MEL_TEST_FEATURES_FILE}.npy'
+
 train_labels_path = f'./data/{config.NAME_TRAIN_LABEL_FILE}.csv'
-test_features_path = f'./data/{config.NAME_TEST_FEATURES_FILE}.npy'
 test_labels_path = f'./data/{config.NAME_TEST_LABEL_FILE}.csv'
-train_dataset = USRADataset(train_labels_path, train_features_path)
-val_dataset = USRADataset(test_labels_path, test_features_path)
-train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size,
- collate_fn=USRADataset_collate)
-test_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size,
- collate_fn=USRADataset_collate)
+
+mfcc_train_dataset = USRADataset(train_labels_path, mfcc_train_features_path)
+mfcc_val_dataset = USRADataset(test_labels_path, mfcc_test_features_path)
+mel_train_dataset = USRADataset(train_labels_path, mel_train_features_path)
+mel_val_dataset = USRADataset(test_labels_path, mel_test_features_path)
+
+mel_train_loader = DataLoader(mel_train_dataset, shuffle=True, batch_size=batch_size,
+                              collate_fn=USRADataset_collate)
+mfcc_train_loader = DataLoader(mfcc_train_dataset, shuffle=True, batch_size=batch_size,
+                              collate_fn=USRADataset_collate)
+mel_test_loader = DataLoader(mel_val_dataset, shuffle=False, batch_size=batch_size,
+                         collate_fn=USRADataset_collate)
+mfcc_test_loader = DataLoader(mfcc_val_dataset, shuffle=False, batch_size=batch_size,
+                         collate_fn=USRADataset_collate)
 
 # For the data setting and model training:
 # Please notice that the current code is for the paper settings, but due to the different features dimensions and model structure,
@@ -100,7 +113,7 @@ class Transformer(nn.Module):
         return rainfall_intensity
 
 
-model = Transformer().to(device)
+model = BaseModel().to(device)
 # -------------------------------------------------------------------#
 #   Determine the current batch_size and adaptively adjust the learning rate
 # -------------------------------------------------------------------#
@@ -118,7 +131,7 @@ Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_m
 
 # Loss and optimizer
 criterion_r = nn.SmoothL1Loss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+# optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Train the model
 R2_max = 0.6
@@ -126,7 +139,7 @@ R2_list = []
 MAE_list = []
 MSE_list = []
 RMSE_list = []
-total_step = len(train_loader)
+total_step = len(mel_train_loader)
 # # ---------------------------------------#
 # #   Optimizer selection based on optimizer_type
 # # ---------------------------------------#
@@ -151,15 +164,16 @@ for epoch in range(num_epochs):
     total_loss = 0
     set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
     model.train()
-    size = len(train_loader)
-    for i, (images,labels_intensity) in enumerate(train_loader):
-        images = images.to(device)
+    # size = len(mel_train_loader)
+    for i, (mfcc_data, mel_data) in enumerate(zip(mfcc_train_loader, mel_train_loader)):
+        mfcc_images = mfcc_data[0].to(device)
+        mfcc_labels = mfcc_data[1].to(torch.float32).to(device)
+        mel_images = mel_data[0].to(device)
+        mel_labels = mel_data[1].to(torch.float32).to(device)
 
-        labels_intensity = labels_intensity.to(torch.float32)
-        labels_intensity = labels_intensity.to(device)
         # Forward pass
-        rainfall_intensity = model(images)
-        r_loss = criterion_r(rainfall_intensity, labels_intensity.view([-1, 1]))
+        rainfall_intensity = model(mfcc_images, mel_images)
+        r_loss = criterion_r(rainfall_intensity, mfcc_labels.view([-1, 1]))
         loss = r_loss
         total_loss += loss.item()
 
@@ -172,31 +186,40 @@ for epoch in range(num_epochs):
         if (i + 1) % 20 == 0:
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
                   .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
-    train_loss_list.append(total_loss / size)
+    # train_loss_list.append(total_loss / size)
     torch.save(model.state_dict(), f'./logs/{config.NAME_MODEL_PERFORMANCE_FILE}.ckpt')
 
     # Test
     model.load_state_dict(torch.load(f'./logs/{config.NAME_MODEL_PERFORMANCE_FILE}.ckpt'))
     model.eval()
 
-    acoustic_feaure = val_dataset.feature
+    mfcc_acoustic_feature = mfcc_val_dataset.feature
+    mel_acoustic_feature = mel_val_dataset.feature
     outputs = []
     step = 16
     with torch.no_grad():
         # split input into slice
-        acoustic_feaure = torch.tensor(acoustic_feaure).cuda()
-        for index in tqdm(range(0,acoustic_feaure.shape[0],step)):
+        mfcc_acoustic_feature = torch.tensor(mfcc_acoustic_feature).cuda()
+        mel_acoustic_feature = torch.tensor(mel_acoustic_feature).cuda()
+        # TODO change "acoustic_feature.shape[0]" to an global number -> length of test features
+        for index in tqdm(range(0,mfcc_acoustic_feature.shape[0],step)):
             if index ==0:
-                rainfall_intensity = model(acoustic_feaure[index:step].to(torch.float))
+                step_mfcc_acoustic_feature = mfcc_acoustic_feature[index:step].to(torch.float)
+                step_mel_acoustic_feature = mel_acoustic_feature[index:step].to(torch.float)
+                rainfall_intensity = model(step_mfcc_acoustic_feature, step_mel_acoustic_feature)
                 outputs = rainfall_intensity
-            elif index>0 and index != acoustic_feaure.shape[0]-acoustic_feaure.shape[0]%step:
-                rainfall_intensity = model(acoustic_feaure[index:index+step].to(torch.float))
+            elif index>0 and index != mfcc_acoustic_feature.shape[0]-mfcc_acoustic_feature.shape[0]%step:
+                step_mfcc_acoustic_feature = mfcc_acoustic_feature[index:index+step].to(torch.float)
+                step_mel_acoustic_feature = mel_acoustic_feature[index:index+step].to(torch.float)
+                rainfall_intensity = model(step_mfcc_acoustic_feature, step_mel_acoustic_feature)
                 outputs = torch.cat((outputs,rainfall_intensity))
-            elif index == acoustic_feaure.shape[0]-acoustic_feaure.shape[0]%step:
-                rainfall_intensity = model(acoustic_feaure[index:acoustic_feaure.shape[0]].to(torch.float))
+            elif index == mfcc_acoustic_feature.shape[0]-mfcc_acoustic_feature.shape[0]%step:
+                step_mfcc_acoustic_feature = mfcc_acoustic_feature[index:mfcc_acoustic_feature.shape[0]].to(torch.float)
+                step_mel_acoustic_feature = mel_acoustic_feature[index:mel_acoustic_feature.shape[0]].to(torch.float)
+                rainfall_intensity = model(step_mfcc_acoustic_feature, step_mel_acoustic_feature)
                 outputs = torch.cat((outputs, rainfall_intensity))
     outputs = np.array(outputs.squeeze().cpu(),dtype=float)
-    labels = val_dataset.label['RAINFALL INTENSITY'].to_numpy()
+    labels = mfcc_val_dataset.label['RAINFALL INTENSITY'].to_numpy()
     MSE = mean_squared_error(labels, outputs)
     RMSE = np.sqrt(mean_squared_error(labels, outputs))
     MAE = mean_absolute_error(labels, outputs)

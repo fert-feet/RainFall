@@ -41,13 +41,15 @@ class utils_audio():
         X = np.array(features)
         return X, Y
 
-    def get_mel_spectrogram(self,   file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
+    def get_mel_spectrogram(self, file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
+        """ 非新模块生成方式 """
         try:
             y, sr = librosa.load(file_path)
             normalized_y = librosa.util.normalize(y)
             mel = librosa.feature.melspectrogram(y=normalized_y, sr=sr, n_mels=self.n_mel)
             mel_db = librosa.amplitude_to_db(abs(mel))
-            normalized_mel = librosa.util.normalize(mel_db)
+            mel_channels = np.stack([mel_db, mel_db, mel_db], axis=0) # (C, F, T), C = 3
+            normalized_mel = librosa.util.normalize(mel_channels)
 
         except Exception as e:
             print("Error parsing wavefile: ", e)

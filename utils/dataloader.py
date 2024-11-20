@@ -39,7 +39,8 @@ class USRADataset(Dataset):
         # for example, if feature is MFCC, network is Transformer, you need to check the "n_model" and other setting of the Transformerencoder, to make sure that
         # the MFCC feature array could be correctly send to model and do a forward calculation.
         n_feature = N_MFCC if NAME_FEATURES_PROJECT == NAME_FEATURES_MFCC else N_MEL
-        feature_item = self.feature[index].reshape(n_feature, 173)
+        # feature_item = self.feature[index].reshape(n_feature, 173)
+        feature_item = self.feature[index]
         rainfall_intensity = self.label.iloc[index]['RAINFALL INTENSITY']
         return feature_item,rainfall_intensity
 
