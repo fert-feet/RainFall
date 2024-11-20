@@ -1,14 +1,13 @@
 
 import config
-
 import glob
-from tqdm import tqdm
 import numpy as np
 import pandas as pd
-
-from moviepy.editor import *
 import librosa
 import librosa.display
+from tqdm import tqdm
+import spafe.features.pncc as pncc
+from moviepy.editor import *
 
 
 
@@ -19,7 +18,13 @@ class utils_audio():
         self.dataset_path = '../../SARIDDATA/SARID/audio'
         self.n_mfcc = config.N_MFCC
         self.n_mel = config.N_MEL
-        self.feature_type = config.NAME_FEATURES_PROJECT
+        self.n_pncc = config.N_PNCC
+
+        self.extract_type_fuc = {
+            config.NAME_FEATURES_MFCC: self.get_mfcc,
+            config.NAME_FEATURES_MEL: self.get_mel_spectrogram,
+            config.NAME_FEATURES_PNCC: self.get_pncc
+        }[config.NAME_FEATURES_PROJECT]
 
     def pre_processing(self, file_path):
         files = glob.glob(os.path.join(file_path,'*.mp3'))
@@ -30,18 +35,19 @@ class utils_audio():
         features = []
         for index, file_path in enumerate(tqdm(files)):
 
-            extracted_feature = self.get_mfcc(file_path) if self.feature_type == config.NAME_FEATURES_MFCC else self.get_mel_spectrogram(file_path)
+            extracted_feature = self.extract_type_fuc(file_path)
             features.append(extracted_feature)
 
         X = np.array(features)
         return X, Y
 
-    def get_mel_spectrogram(self,file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
+    def get_mel_spectrogram(self,   file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
         try:
             y, sr = librosa.load(file_path)
             normalized_y = librosa.util.normalize(y)
             mel = librosa.feature.melspectrogram(y=normalized_y, sr=sr, n_mels=self.n_mel)
-            normalized_mel = librosa.util.normalize(mel)
+            mel_db = librosa.amplitude_to_db(abs(mel))
+            normalized_mel = librosa.util.normalize(mel_db)
 
         except Exception as e:
             print("Error parsing wavefile: ", e)
@@ -49,7 +55,7 @@ class utils_audio():
 
         return normalized_mel
 
-    def get_mfcc(self,file_path, mfcc_max_padding=0):
+    def get_mfcc(self,  file_path, mfcc_max_padding=0):
         try:
             y, sr = librosa.load(file_path)
             normalized_y = librosa.util.normalize(y)
@@ -59,7 +65,21 @@ class utils_audio():
         except Exception as e:
             print("Error parsing wavefile: ", e)
             return None
+
         return normalized_mfcc
+
+    def get_pncc(self, file_path):
+        try:
+            y, sr = librosa.load(file_path)
+            normalized_y = librosa.util.normalize(y)
+            pncc_feature = pncc.pncc(normalized_y, nfilts=50, fs=sr, num_ceps=self.n_pncc)
+            normalized_pncc = librosa.util.normalize(pncc_feature)
+
+        except Exception as e:
+            print("Error parsing wavefile: ", e)
+            return None
+
+        return normalized_pncc
 
 
 if __name__ == '__main__':

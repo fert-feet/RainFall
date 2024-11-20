@@ -1,16 +1,16 @@
 import numpy as np
 from utils.dataloader import USRADataset,USRADataset_collate
 from torch.utils.data import DataLoader
+from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
 from tqdm import tqdm
-from nets.general_net import *
+from SARID.model.general_net import *
 from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
 from utils.draw import result_show
 from utils import config
 
-# import torchinfo
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -79,7 +79,8 @@ class LSTM(nn.Module):
 class Transformer(nn.Module):
     def __init__(self):
         super(Transformer, self).__init__()
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=128, nhead=8, dim_feedforward=512)
+        self.n_feature = config.N_MFCC if config.NAME_FEATURES_PROJECT == config.NAME_FEATURES_MFCC else config.N_MEL
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=self.n_feature, nhead=8, dim_feedforward=512)
         self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
         self.layer1 = nn.Sequential(
             self.transformer_encoder)
@@ -89,9 +90,9 @@ class Transformer(nn.Module):
         self.fc3 = nn.Linear(128, 1)
 
     def forward(self, x):
-        x = x.permute(2, 0, 1)
+        x = x.permute(2, 0, 1) # (B, F, T) -> (T, B, F)
         out = self.layer1(x)
-        out = out.permute(1, 0, 2)
+        out = out.permute(1, 0, 2) # (T, B, F) -> (B, T, F) or (B, F, T)
         out = self.layer4(out)
         out = out.reshape(out.size(0), -1)
         out = self.fc1(out)
@@ -117,7 +118,7 @@ Min_lr_fit = min(max(batch_size / nbs * Min_lr, lr_limit_min * 1e-2), lr_limit_m
 
 # Loss and optimizer
 criterion_r = nn.SmoothL1Loss()
-# optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Train the model
 R2_max = 0.6
@@ -135,20 +136,20 @@ optimizer = {
                      weight_decay=weight_decay)
 }[optimizer_type]
 
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=num_epochs*batch_size)
+# scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=num_epochs*batch_size)
 
 #
 # # ---------------------------------------#
 # #   Formula for obtaining a decrease in the learning rate
 # # ---------------------------------------#
-# lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, num_epochs)
+lr_scheduler_func = get_lr_scheduler(lr_decay_type, Init_lr_fit, Min_lr_fit, num_epochs)
 
 train_loss_list = []
 test_loss_list = []
 
 for epoch in range(num_epochs):
     total_loss = 0
-    # set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
+    set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
     model.train()
     size = len(train_loader)
     for i, (images,labels_intensity) in enumerate(train_loader):
@@ -166,7 +167,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        scheduler.step()
+        # scheduler.step()
 
         if (i + 1) % 20 == 0:
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'

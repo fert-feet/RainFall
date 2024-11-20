@@ -31,7 +31,7 @@ class result_show():
         self.RMSE = RMSE
         self.MSE = MSE
         self.MAE = MAE
-        self.img_save_path = "../data/img/result.png"
+        self.img_save_path = "./data/img/result.png"
     def draw(self):
         test_labels = self.labels
         predictions = self.outputs
@@ -134,4 +134,5 @@ class result_show():
         ax.plot(self.labels[::50], label="real")
         ax.plot(self.outputs[::50], label="model_outputs")
         ax.legend()
+        fig.savefig(self.img_save_path)
         # fig.show()
