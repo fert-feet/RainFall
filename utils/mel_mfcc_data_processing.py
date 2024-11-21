@@ -11,7 +11,7 @@ from moviepy.editor import *
 
 
 
-class utils_audio():
+class FeaturesExtract:
     def __init__(self):
         self.dataset_path_train = '../../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_train'
         self.dataset_path_test = '../../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_test'
@@ -23,7 +23,8 @@ class utils_audio():
         self.extract_type_fuc = {
             config.NAME_FEATURES_MFCC: self.get_mfcc,
             config.NAME_FEATURES_MEL: self.get_mel_spectrogram,
-            config.NAME_FEATURES_PNCC: self.get_pncc
+            config.NAME_FEATURES_PNCC: self.get_pncc,
+            config.NAME_FEATURES_SPEC: self.generate_stft_spectrogram
         }[config.NAME_FEATURES_PROJECT]
 
     def pre_processing(self, file_path):
@@ -48,8 +49,8 @@ class utils_audio():
             normalized_y = librosa.util.normalize(y)
             mel = librosa.feature.melspectrogram(y=normalized_y, sr=sr, n_mels=self.n_mel)
             mel_db = librosa.amplitude_to_db(abs(mel))
-            mel_channels = np.stack([mel_db, mel_db, mel_db], axis=0) # (C, F, T), C = 3
-            normalized_mel = librosa.util.normalize(mel_channels)
+            # mel_channels = np.stack([mel_db, mel_db, mel_db], axis=0) # (C, F, T), C = 3
+            normalized_mel = librosa.util.normalize(mel_db)
 
         except Exception as e:
             print("Error parsing wavefile: ", e)
@@ -83,11 +84,23 @@ class utils_audio():
 
         return normalized_pncc
 
+    def generate_stft_spectrogram(self, file_path, sr=22050, n_fft=2048, hop_length=512):
+        y, sr = librosa.load(file_path, sr=sr)
+
+        spec = librosa.stft(y, n_fft=n_fft, hop_length=hop_length)
+        spec_db = librosa.amplitude_to_db(np.abs(spec), ref=np.max)
+        spec_db = spec_db[:200]
+        normalized_spec = librosa.util.normalize(spec_db)
+
+        channel_spec = np.stack([normalized_spec] * 3, axis=0)
+
+        return channel_spec
+
 
 if __name__ == '__main__':
 
 
-    audio_utils = utils_audio()
+    audio_utils = FeaturesExtract()
 
     # train
     X_train, Y_train = audio_utils.pre_processing(audio_utils.dataset_path_train)

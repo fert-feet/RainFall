@@ -128,11 +128,12 @@ class result_show():
         plt.show()
 
     def simply_draw(self):
-        fig, ax = plt.subplots()
-        print(self.outputs)
-        print(self.labels)
-        ax.plot(self.labels[::50], label="real")
-        ax.plot(self.outputs[::50], label="model_outputs")
-        ax.legend()
-        fig.savefig(self.img_save_path)
-        # fig.show()
+        pass
+        # fig, ax = plt.subplots()
+        # print(self.outputs)
+        # print(self.labels)
+        # ax.plot(self.labels[::50], label="real")
+        # ax.plot(self.outputs[::50], label="model_outputs")
+        # ax.legend()
+        # fig.savefig(self.img_save_path)
+        # # fig.show()

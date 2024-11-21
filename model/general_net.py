@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 from torch.hub import load_state_dict_from_url
+from torchsummary import summary
 
 
 class BaseCNN_Conv(nn.Module):
@@ -41,7 +42,7 @@ class ModifiedAlexNet(nn.Module):
     def __init__(self, num_classes=4, in_ch=3, pretrained=True):
         super(ModifiedAlexNet, self).__init__()
 
-        model = torchvision.models.alexnet(pretrained=pretrained)
+        model = torchvision.models.alexnet(pretrained=False)
         pre_train_model = torch.load("./model/pre_trained_model/alex_net/alex_net_pre_train_model.pth")
         model.load_state_dict(pre_train_model)
 
@@ -75,6 +76,33 @@ class ModifiedAlexNet(nn.Module):
 
 
 class ModifiedTransformer(nn.Module):
-    # TODO finish this
-    pass
+    def __init__(self, n_features, n_head):
+        super(ModifiedTransformer, self).__init__()
+        self.n_features = n_features
+        self.n_head = n_head
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=self.n_features, nhead=self.n_head, batch_first=True,dim_feedforward=512)
+        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
+        self.layer1 = nn.Sequential(
+            self.transformer_encoder)
+        self.layer4 = nn.Sequential(
+            nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
 
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer4(out)
+        return out
+
+class ModifiedResnet18(torch.nn.Module):
+    def __init__(self, pretrained=False):
+        super(ModifiedResnet18, self).__init__()
+        origin_model = torchvision.models.resnet18(pretrained=pretrained)
+        self.base_model = torch.nn.Sequential(*list(origin_model.children())[:-1])
+
+    def forward(self, x):
+        out = self.base_model(x)
+        return out
+
+
+# x = torch.randn(2, 173, 128)
+# model = ModifiedTransformer(n_features=128, n_head=8)
+# out = summary(model, x)
