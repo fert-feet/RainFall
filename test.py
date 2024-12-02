@@ -1,3 +1,7 @@
-import os
-res = os.path.exists("./data/train_label_nmfcc400.csv")
-print(res)
+import librosa
+import numpy as np
+
+
+file = np.load('/home/project/papercode/EstimatingRainFall/SARID/data/train_features_wave_n_0.npy')
+
+print(file.shape)

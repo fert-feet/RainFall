@@ -1,3 +1,4 @@
+import os.path
 
 import config
 import glob
@@ -24,7 +25,8 @@ class FeaturesExtract:
             config.NAME_FEATURES_MFCC: self.get_mfcc,
             config.NAME_FEATURES_MEL: self.get_mel_spectrogram,
             config.NAME_FEATURES_PNCC: self.get_pncc,
-            config.NAME_FEATURES_SPEC: self.generate_stft_spectrogram
+            config.NAME_FEATURES_SPEC: self.generate_stft_spectrogram,
+            config.NAME_FEATURES_WAVE: self.load_audio_with_librosa
         }[config.NAME_FEATURES_PROJECT]
 
     def pre_processing(self, file_path):
@@ -96,6 +98,12 @@ class FeaturesExtract:
 
         return channel_spec
 
+    def load_audio_with_librosa(self, file_path, target_sr=16000):
+
+        waveform, sr = librosa.load(file_path)  # 重采样到 target_sr
+        waveform = librosa.util.normalize(waveform)
+        return waveform
+
 
 if __name__ == '__main__':
 
@@ -104,10 +112,10 @@ if __name__ == '__main__':
 
     # train
     X_train, Y_train = audio_utils.pre_processing(audio_utils.dataset_path_train)
-    Y_train.to_csv(f'../data/{config.NAME_TRAIN_LABEL_FILE}.csv')
+    Y_train.to_csv(f'../data/train_labels.csv')
     np.save(f"../data/{config.NAME_TRAIN_FEATURES_FILE}", X_train)
 
     # test
     X_test, Y_test = audio_utils.pre_processing(audio_utils.dataset_path_test)
-    Y_test.to_csv(f'../data/{config.NAME_TEST_LABEL_FILE}.csv')
+    Y_test.to_csv(f'../data/test_labels.csv')
     np.save(f"../data/{config.NAME_TEST_FEATURES_FILE}", X_test)

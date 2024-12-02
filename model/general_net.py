@@ -39,12 +39,13 @@ class GCNN_Conv(nn.Module):
 
 
 class ModifiedAlexNet(nn.Module):
-    def __init__(self, num_classes=4, in_ch=3, pretrained=True):
+    def __init__(self, num_classes=4, in_ch=3, pretrained=False):
         super(ModifiedAlexNet, self).__init__()
 
         model = torchvision.models.alexnet(pretrained=False)
-        pre_train_model = torch.load("./model/pre_trained_model/alex_net/alex_net_pre_train_model.pth")
-        model.load_state_dict(pre_train_model)
+        if pretrained:
+            pre_train_model = torch.load("./pre_trained_model/alex_net/alex_net_pre_train_model.pth")
+            model.load_state_dict(pre_train_model)
 
         self.features = model.features
         self.avgpool = model.avgpool
@@ -95,7 +96,9 @@ class ModifiedTransformer(nn.Module):
 class ModifiedResnet18(torch.nn.Module):
     def __init__(self, pretrained=False):
         super(ModifiedResnet18, self).__init__()
-        origin_model = torchvision.models.resnet18(pretrained=pretrained)
+        origin_model = torchvision.models.resnet18(pretrained=False)
+        if pretrained:
+            origin_model.load_state_dict(torch.load("./model/pre_trained_model/resnet/resnet18-5c106cde.pth"))
         self.base_model = torch.nn.Sequential(*list(origin_model.children())[:-1])
 
     def forward(self, x):

@@ -137,3 +137,6 @@ class result_show():
         # ax.legend()
         # fig.savefig(self.img_save_path)
         # # fig.show()
+
+
+# 生成一个MD5加密方法

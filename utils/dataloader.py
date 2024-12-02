@@ -4,21 +4,12 @@
 # @File : dataloader.py
 # @desc :
 
-import math
-import random
-import logging as log
 from .config import *
 import numpy as np
 import torch
-import torchaudio.transforms
-from pyexpat import features
+from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataset import Dataset
-import librosa
-import os
 import pandas as pd
-import torch.nn.functional as F
-# from imblearn.over_sampling import SMOTE
-from sklearn.preprocessing import StandardScaler,MinMaxScaler
 
 
 class USRADataset(Dataset):
@@ -27,7 +18,6 @@ class USRADataset(Dataset):
         self.label = pd.read_csv(label_path)
         self.feature = np.load(feature_path)
         self.length = self.label.shape[0]
-        print("input_shape---{}".format(self.feature[0].shape))
         self.num_rows = 40
         self.num_columns = 173
         self.num_channels = 1
@@ -43,6 +33,16 @@ class USRADataset(Dataset):
         feature_item = self.feature[index]
         rainfall_intensity = self.label.iloc[index]['RAINFALL INTENSITY']
         return feature_item,rainfall_intensity
+
+def get_data_loaders(train_data_path, train_label_path, test_data_path, test_label_path, batch_size=32):
+    train_dataset = USRADataset(train_data_path, train_label_path)
+    test_dataset = USRADataset(test_data_path, test_label_path)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=USRADataset_collate)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=USRADataset_collate)
+
+    return train_loader, test_loader
+
 
 def USRADataset_collate(batch):
     features,batch_rainfall_intensities = [],[]
