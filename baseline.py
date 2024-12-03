@@ -1,6 +1,6 @@
 import numpy as np
 
-from model.base_model import BaseModel
+from model.base_model import CoAttentionModel
 from utils.dataloader import USRADataset,USRADataset_collate
 from torch.utils.data import DataLoader
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
@@ -10,7 +10,7 @@ from model.general_net import *
 from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
-from utils.draw import result_show
+from utils.draw import Plotter
 from utils import config
 
 
@@ -122,7 +122,7 @@ class Transformer(nn.Module):
         return rainfall_intensity
 
 
-model = BaseModel().to(device)
+model = CoAttentionModel().to(device)
 # -------------------------------------------------------------------#
 #   Determine the current batch_size and adaptively adjust the learning rate
 # -------------------------------------------------------------------#
@@ -239,5 +239,5 @@ for epoch in range(num_epochs):
     MSE_list.append(MSE)
     MAE_list.append(MAE)
 
-    draw_tool = result_show(labels, outputs, R2, RMSE, MSE, MAE)
+    draw_tool = Plotter(labels, outputs, R2, RMSE, MSE, MAE)
     draw_tool.simply_draw()

@@ -1,11 +1,9 @@
 import numpy as np
-import pandas as pd
-import os
 
 from utils import config
 import torch
 from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
-from model.base_model import BaseModel
+from model.base_model import SingleWaveVec2Model, SingleTransformerModel
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
 from tqdm import tqdm
@@ -13,7 +11,7 @@ from model.general_net import *
 from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
-from utils.draw import result_show
+from utils.draw import Plotter
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -22,6 +20,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 num_epochs = config.NUM_EPOCHES
 batch_size = config.BATCH_SIZE
 learning_rate = config.LEARNING_RATE
+single_feature = config.NAME_FEATURES_PROJECT
 
 data_paths = {
     'train_data_paths': {
@@ -41,8 +40,13 @@ data_paths = {
 train_data_loaders = get_train_data_loaders(data_paths, batch_size)
 test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 
+feature_train_loader = train_data_loaders[single_feature]
+feature_test_dataset= test_data_loaders[single_feature + '_dataset']
 
-model = BaseModel().to(device)
+model = SingleTransformerModel().to(device)
+
+
+
 
 Init_lr = 5e-4
 Min_lr = Init_lr * 0.01
@@ -81,19 +85,16 @@ for epoch in range(num_epochs):
     total_loss = 0
     set_optimizer_lr(optimizer, lr_scheduler_func, epoch)
     model.train()
-    total_step = len(train_data_loaders['mfcc'])
+    total_step = len(feature_train_loader)
 
-    for i, (mfcc_data, spec_data, wave_data) in enumerate(zip(train_data_loaders['mfcc'], train_data_loaders['spec'], train_data_loaders['wave'])):
-        mfcc_images = mfcc_data[0].to(device)
-        mfcc_labels = mfcc_data[1].to(torch.float32).to(device)
-        spec_images = spec_data[0].to(device)
-        spec_labels = spec_data[1].to(torch.float32).to(device)
-        wave_images = wave_data[0].to(device)
-        wave_labels = wave_data[1].to(torch.float32).to(device)
+    for i, (train_loader) in enumerate(feature_train_loader):
+        images = train_loader[0].to(device)
+        targets = train_loader[1].to(torch.float32).to(device)
+
 
         # Forward pass
-        rainfall_intensity = model(mfcc_images, spec_images, wave_images)
-        r_loss = criterion_r(rainfall_intensity, mfcc_labels.view([-1, 1]))
+        rainfall_intensity = model(images)
+        r_loss = criterion_r(rainfall_intensity, targets.view([-1, 1]))
         loss = r_loss
         total_loss += loss.item()
 
@@ -112,26 +113,20 @@ for epoch in range(num_epochs):
     model.load_state_dict(torch.load(f'./logs/{config.NAME_MODEL_PERFORMANCE_FILE}.ckpt'))
     model.eval()
 
-    mfcc_acoustic_feature = test_data_loaders['mfcc_dataset'].feature
-    spec_acoustic_feature = test_data_loaders['spec_dataset'].feature
-    wave_acoustic_feature = test_data_loaders['wave_dataset'].feature
+    acoustic_feature = feature_test_dataset.feature
 
     outputs = []
     step = 16
     with torch.no_grad():
-        mfcc_acoustic_feature = torch.tensor(mfcc_acoustic_feature).cuda()
-        spec_acoustic_feature = torch.tensor(spec_acoustic_feature).cuda()
-        wave_acoustic_feature = torch.tensor(wave_acoustic_feature).cuda()
+        acoustic_feature = torch.tensor(acoustic_feature).cuda()
 
-        for index in tqdm(range(0, mfcc_acoustic_feature.shape[0], step)):
-            step_mfcc_acoustic_feature = mfcc_acoustic_feature[index:index+step].to(torch.float)
-            step_spec_acoustic_feature = spec_acoustic_feature[index:index+step].to(torch.float)
-            step_wave_acoustic_feature = wave_acoustic_feature[index:index+step].to(torch.float)
-            rainfall_intensity = model(step_mfcc_acoustic_feature, step_spec_acoustic_feature, step_wave_acoustic_feature)
+        for index in tqdm(range(0, acoustic_feature.shape[0], step)):
+            step_acoustic_feature = acoustic_feature[index:index + step].to(torch.float)
+            rainfall_intensity = model(step_acoustic_feature)
             outputs = torch.cat((outputs, rainfall_intensity)) if index > 0 else rainfall_intensity
 
     outputs = np.array(outputs.squeeze().cpu(), dtype=float)
-    labels = test_data_loaders['mfcc_dataset'].label['RAINFALL INTENSITY'].to_numpy()
+    labels = feature_test_dataset.label['RAINFALL INTENSITY'].to_numpy()
     MSE = mean_squared_error(labels, outputs)
     RMSE = np.sqrt(mean_squared_error(labels, outputs))
     MAE = mean_absolute_error(labels, outputs)
@@ -142,5 +137,6 @@ for epoch in range(num_epochs):
     MSE_list.append(MSE)
     MAE_list.append(MAE)
 
-    draw_tool = result_show(labels, outputs, R2, RMSE, MSE, MAE)
-    draw_tool.simply_draw()
+    if epoch + 1 == num_epochs:
+        draw_tool = Plotter(labels, outputs, R2_list, RMSE_list, MSE_list, MAE_list, single_feature)
+        draw_tool.simply_draw()

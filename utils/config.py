@@ -1,12 +1,12 @@
 # baseline config
 NUM_EPOCHES = 100
-BATCH_SIZE = 16
+BATCH_SIZE = 128
 LEARNING_RATE = 0.001
 
 # model
 NAME_MULTI = "multi"
 NAME_SINGLE_TRANS = "single"
-NAME_MODEL_PROJECT = NAME_MULTI
+NAME_MODEL_PROJECT = NAME_SINGLE_TRANS
 
 # feature extract
 N_MFCC = 40
@@ -19,8 +19,8 @@ NAME_FEATURES_MEL = "mel"
 NAME_FEATURES_PNCC = "npcc"
 NAME_FEATURES_SPEC = "spec"
 NAME_FEATURES_WAVE = "wave"
-NAME_FEATURES_PROJECT = NAME_FEATURES_SPEC
-NUM_N_FEATURE = N_WAVE
+NAME_FEATURES_PROJECT = NAME_FEATURES_MFCC
+NUM_N_FEATURE = N_MFCC
 
 # TODO change label files name to global, because mel and mfcc share same label file
 

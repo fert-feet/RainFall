@@ -100,7 +100,7 @@ class FeaturesExtract:
 
     def load_audio_with_librosa(self, file_path, target_sr=16000):
 
-        waveform, sr = librosa.load(file_path)  # 重采样到 target_sr
+        waveform, sr = librosa.load(file_path, sr=target_sr)  # 重采样到 target_sr
         waveform = librosa.util.normalize(waveform)
         return waveform
 

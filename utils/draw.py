@@ -3,6 +3,8 @@
 # @Author : Mingzheng 
 # @File : draw.py
 # @desc :
+import os
+
 import numpy as np
 import logging
 import torch
@@ -23,120 +25,40 @@ from sklearn.metrics import mean_squared_error  # 均方误差
 from sklearn.metrics import mean_absolute_error  # 平方绝对误差
 from sklearn.metrics import r2_score  # R square
 
-class result_show():
-    def __init__(self, labels, outputs, R2, RMSE, MSE, MAE):
+class Plotter:
+    def __init__(self, labels, outputs, R2, RMSE, MSE, MAE, feature_name):
         self.labels = labels
         self.outputs = outputs
         self.R2 = R2
         self.RMSE = RMSE
         self.MSE = MSE
         self.MAE = MAE
-        self.img_save_path = "./data/img/result.png"
-    def draw(self):
-        test_labels = self.labels
-        predictions = self.outputs
-        # 绘图(大论文)
-        x2 = np.linspace(-16, 16)
-        y2 = x2
-        def f_1(x, A, B):
-            return A * x + B
-        A1, B1 = optimize.curve_fit(f_1, test_labels, predictions)[0]
-        y3 = A1 * test_labels + B1
-        fig, ax = plt.subplots(figsize=(7, 5), dpi=200)
-        point = plt.scatter(test_labels, predictions, edgecolors=None, c='k', s=16, marker='s')
-        ax.plot(x2, y2, color='k', linewidth=1.5, linestyle='--')
-        ax.plot(test_labels, y3, color='r', linewidth=2, linestyle='-')
-        fontdict1 = {"size": 15, "color": "k", "family": "SimSun"}
-        ax.set_xlabel("真实降雨强度", fontdict=fontdict1)
-        ax.set_ylabel("估计降雨强度", fontdict=fontdict1)
-        ax.grid(False)
-        ax.set_xlim((0, 16.0))
-        ax.set_ylim((0, 16.0))
-        ax.set_xticks(np.arange(0, 16, step=1))
-        ax.set_yticks(np.arange(0, 16, step=1))
-        labels = ax.get_xticklabels() + ax.get_yticklabels()
-        [label.set_fontname('Times New Roman') for label in labels]
-        for spine in ['top', 'bottom', 'left', 'right']:
-            ax.spines[spine].set_color('k')
-        ax.tick_params(left=True, bottom=True, direction='in', labelsize=14)
-        titlefontdict = {'size': 16, 'color': 'k', 'family': 'SimSun'}
-        ax.set_title('降雨估计散点图', titlefontdict, pad=20)
-        fontdict = {'size': 14, 'color': 'k', 'family': 'Times New Roman'}
-        ax.text(0.5, 15, r'$R^2=$' + str(round(self.R2, 3)), fontdict=fontdict)
-        ax.text(0.5, 14, r'RMSE=' + str(round(self.RMSE, 3)), fontdict=fontdict)
-        ax.text(0.5, 13, r'MSE=' + str(round(self.MSE, 3)), fontdict=fontdict)
-        ax.text(0.5, 12, r'MAE=' + str(round(self.MAE, 3)), fontdict=fontdict)
-        ax.text(0.5, 11, r'$y=$' + str(round(A1, 3)) + '$x$' + " + " + str(round(B1, 3)), fontdict=fontdict)
-        ax.text(0.5, 10, r'$N=$' + str(len(test_labels)), fontdict=fontdict)
-        # plt.scatter(test_labels,predictions,s=2,c=predictions,cmap='coolwarm')
-        plt.show()
-        # 绘图(小论文)
-        x2 = np.linspace(-16, 16)
-        y2 = x2
-
-
-        def f_1(x, A, B):
-            return A * x + B
-
-
-        A1, B1 = optimize.curve_fit(f_1, test_labels, predictions)[0]
-        y3 = A1 * test_labels + B1
-        fig, ax = plt.subplots(figsize=(7, 5), dpi=200)
-        point = plt.scatter(test_labels, predictions, edgecolors=None, c='k', s=16, marker='s')
-        ax.plot(x2, y2, color='k', linewidth=1.5, linestyle='--')
-        ax.plot(test_labels, y3, color='r', linewidth=2, linestyle='-')
-        fontdict1 = {"size": 17, "color": "k", "family": "Times New Roman"}
-        ax.set_xlabel("True Values", fontdict=fontdict1)
-        ax.set_ylabel("Estimated Values", fontdict=fontdict1)
-        ax.grid(False)
-        ax.set_xlim((0, 16.0))
-        ax.set_ylim((0, 16.0))
-        ax.set_xticks(np.arange(0, 16, step=1))
-        ax.set_yticks(np.arange(0, 16, step=1))
-        labels = ax.get_xticklabels() + ax.get_yticklabels()
-        [label.set_fontname('Times New Roman') for label in labels]
-        for spine in ['top', 'bottom', 'left', 'right']:
-            ax.spines[spine].set_color('k')
-        ax.tick_params(left=True, bottom=True, direction='in', labelsize=14)
-        titlefontdict = {'size': 20, 'color': 'k', 'family': 'Times New Roman'}
-        ax.set_title('Scatter plot of True data and Model Estimated', titlefontdict, pad=20)
-        fontdict = {'size': 16, 'color': 'k', 'family': 'Times New Roman'}
-        ax.text(0.5, 15, r'$R^2=$' + str(round(self.R2, 3)), fontdict=fontdict)
-        ax.text(0.5, 14, r'RMSE=' + str(round(self.RMSE, 3)), fontdict=fontdict)
-        ax.text(0.5, 13, r'MSE=' + str(round(self.MSE, 3)), fontdict=fontdict)
-        ax.text(0.5, 12, r'MAE=' + str(round(self.MAE, 3)), fontdict=fontdict)
-        ax.text(0.5, 11, r'$y=$' + str(round(A1, 3)) + '$x$' + " + " + str(round(B1, 3)), fontdict=fontdict)
-        ax.text(0.5, 10, r'$N=$' + str(len(test_labels)), fontdict=fontdict)
-        # plt.scatter(test_labels,predictions,s=2,c=predictions,cmap='coolwarm')
-        # Estimate the 2D histogram
-        nbins = 70
-        H, xedges, yedges = np.histogram2d(test_labels, predictions, bins=nbins)
-        # H needs to be rotated and flipped
-        H = np.rot90(H)
-        H = np.flipud(H)
-        # Mask zeros
-        Hmasked = np.ma.masked_where(H == 0, H)  # Mask pixels with a value of zero
-        # 开始绘图
-        plt.pcolormesh(xedges, yedges, Hmasked, cmap=plt.cm.get_cmap('jet'), vmin=0, vmax=40)
-        cbar = plt.colorbar(ax=ax, ticks=[0, 10, 20, 30, 40], drawedges=False)
-        # cbar.ax.set_ylabel('Frequency',fontdict=colorbarfontdict)
-        colorbarfontdict = {'size': 16, 'color': 'k', 'family': 'Times New Roman'}
-        cbar.ax.set_title('Counts', fontdict=colorbarfontdict, pad=8)
-        cbar.ax.tick_params(labelsize=12, direction='in')
-        cbar.ax.set_yticklabels(['0', '10', '20', '30', '>40'], family='Times New Roman')
-        # plt.style.use('seaborn-darkgrid')
-        plt.show()
+        self.feature_name = feature_name
+        self.img_save_path = "./data/img"
 
     def simply_draw(self):
-        pass
-        # fig, ax = plt.subplots()
-        # print(self.outputs)
-        # print(self.labels)
-        # ax.plot(self.labels[::50], label="real")
-        # ax.plot(self.outputs[::50], label="model_outputs")
-        # ax.legend()
-        # fig.savefig(self.img_save_path)
-        # # fig.show()
+        plt.figure(figsize=(14, 7))
 
+        plt.plot(self.R2, label='R2', color='#1f77b4', linestyle='-', linewidth=1.5, marker='o', markersize=3)
 
-# 生成一个MD5加密方法
+        plt.plot(self.MSE, label='MSE', color='#ff7f0e', linestyle='--', linewidth=1.5, marker='s', markersize=3)
+
+        plt.plot(self.RMSE, label='RMSE', color='#2ca02c', linestyle='-.', linewidth=1.5, marker='^', markersize=3)
+
+        plt.plot(self.MAE, label='MAE', color='#d62728', linestyle=':', linewidth=1.5, marker='x', markersize=3)
+
+        plt.legend(fontsize=12)
+
+        plt.title('Metrics over Epochs', fontsize=16)
+        plt.xlabel('Epoch', fontsize=14)
+        plt.ylabel('Metric Value', fontsize=14)
+
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+
+        plt.grid(True, linestyle='--', alpha=0.7)
+
+        plt.tight_layout()
+
+        plt.savefig(os.path.join(self.img_save_path, self.feature_name), dpi=300)
+

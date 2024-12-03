@@ -12,9 +12,9 @@ from .general_net import *
 
 
 # __all__ = ['Ser_Model']
-class BaseModel(nn.Module):
+class CoAttentionModel(nn.Module):
     def __init__(self):
-        super(BaseModel, self).__init__()
+        super(CoAttentionModel, self).__init__()
 
         # CNN for Spectrogram
         self.alexnet_model = ModifiedAlexNet(num_classes=1, in_ch=3, pretrained=True)
@@ -102,6 +102,24 @@ class BaseModel(nn.Module):
 
         return output_att
 
+class SingleTransformerModel(nn.Module):
+    def __init__(self):
+        super(SingleTransformerModel, self).__init__()
+        self.transformer = ModifiedTransformer(n_features=40, n_head=5)
+
+    def forward(self, audio_mfcc):
+        audio_mfcc = audio_mfcc.permute(0, 2, 1)
+        output = self.transformer(audio_mfcc)
+        return output
+
+class SingleWaveVec2Model(nn.Module):
+    def __init__(self):
+        super(SingleWaveVec2Model, self).__init__()
+        self.wave_model = ModifiedWaveVec2()
+
+    def forward(self, audio_wav):
+        output = self.wave_model(audio_wav)
+        return output
 
 # audio_spec = torch.randn(1, 3, 173, 200).to('cuda')
 # audio_mfcc = torch.randn(1, 173, 40).to('cuda')

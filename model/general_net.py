@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import torchvision
 from torch.hub import load_state_dict_from_url
 from torchsummary import summary
+from transformers import Wav2Vec2Model
 
 
 class BaseCNN_Conv(nn.Module):
@@ -87,10 +88,15 @@ class ModifiedTransformer(nn.Module):
             self.transformer_encoder)
         self.layer4 = nn.Sequential(
             nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
+        self.fc1 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 1)
 
     def forward(self, x):
         out = self.layer1(x)
         out = self.layer4(out)
+        out = out.reshape(out.size(0), -1)
+        out = self.fc1(out)
+        out = self.fc3(out)
         return out
 
 class ModifiedResnet18(torch.nn.Module):
@@ -105,7 +111,25 @@ class ModifiedResnet18(torch.nn.Module):
         out = self.base_model(x)
         return out
 
+class ModifiedWaveVec2(torch.nn.Module):
+    def __init__(self, pretrained=False):
+        super(ModifiedWaveVec2, self).__init__()
+        self.wav2_layer = Wav2Vec2Model.from_pretrained("./model/pre_trained_model/wav2vec2")
+        self.avg_layer = nn.Sequential(nn.AdaptiveAvgPool2d(16))
+        self.fc1 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 1)
 
-# x = torch.randn(2, 173, 128)
-# model = ModifiedTransformer(n_features=128, n_head=8)
-# out = summary(model, x)
+    def forward(self, x):
+        out = self.wav2_layer(x).last_hidden_state
+        out = self.avg_layer(out)
+        out = out.reshape(out.size(0), -1)
+        out = self.fc1(out)
+        out = self.fc3(out)
+        return out
+
+
+
+#
+# X = torch.randn(1, 64000).to('cuda')
+# model = ModifiedWaveVec2().to('cuda')
+# summary(model, X)
