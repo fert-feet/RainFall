@@ -44,7 +44,7 @@ class ModifiedAlexNet(nn.Module):
 
         model = torchvision.models.alexnet(pretrained=False)
         if pretrained:
-            pre_train_model = torch.load("./pre_trained_model/alex_net/alex_net_pre_train_model.pth")
+            pre_train_model = torch.load("./model/pre_trained_model/alex_net/alex_net_pre_train_model.pth")
             model.load_state_dict(pre_train_model)
 
         self.features = model.features

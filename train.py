@@ -5,7 +5,7 @@ import os
 from utils import config
 import torch
 from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
-from model.Base_Model import BaseModel
+from model.base_model import BaseModel
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
 from tqdm import tqdm
@@ -44,7 +44,6 @@ test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 
 model = BaseModel().to(device)
 
-# Hyperparameters for learning rate adjustment
 Init_lr = 5e-4
 Min_lr = Init_lr * 0.01
 optimizer_type = "adam"

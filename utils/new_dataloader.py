@@ -1,13 +1,12 @@
 from .config import *
 import numpy as np
 import torch
-from torch.utils.data.dataset import Dataset
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 
 
 class MyDataSet(Dataset):
-    def __init__(self,label_path,feature_path):
+    def __init__(self, feature_path, label_path):
         super(MyDataSet, self).__init__()
         self.label = pd.read_csv(label_path)
         self.feature = np.load(feature_path)
@@ -45,9 +44,9 @@ def get_train_data_loaders(data_paths, batch_size=32):
     train_data_paths = data_paths['train_data_paths']
     train_label_path = data_paths['train_label_path']
 
-    spec_train_loader = create_dataloader(train_data_paths['spec'], train_label_path, batch_size, True, dataset_collect)
-    mfcc_train_loader = create_dataloader(train_data_paths['mfcc'], train_label_path, batch_size, True, dataset_collect)
-    wave_train_loader = create_dataloader(train_data_paths['wave'], train_label_path, batch_size, True, dataset_collect)
+    spec_train_loader, _ = create_dataloader(train_data_paths['spec'], train_label_path, batch_size, True, dataset_collect)
+    mfcc_train_loader, _ = create_dataloader(train_data_paths['mfcc'], train_label_path, batch_size, True, dataset_collect)
+    wave_train_loader, _ = create_dataloader(train_data_paths['wave'], train_label_path, batch_size, True, dataset_collect)
 
     return {
         'spec': spec_train_loader,
