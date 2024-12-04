@@ -3,7 +3,7 @@ import numpy as np
 from utils import config
 import torch
 from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
-from model.base_model import SingleWaveVec2Model, SingleTransformerModel
+from model.base_model import SingleCNNModel
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
 from tqdm import tqdm
@@ -26,13 +26,15 @@ data_paths = {
     'train_data_paths': {
         'spec': f'./data/{config.NAME_SPEC_TRAIN_FEATURES_FILE}.npy',
         'mfcc': f'./data/{config.NAME_MFCC_TRAIN_FEATURES_FILE}.npy',
-        'wave': f'./data/{config.NAME_WAVE_TRAIN_FEATURES_FILE}.npy'
+        'wave': f'./data/{config.NAME_WAVE_TRAIN_FEATURES_FILE}.npy',
+        'mel': f'./data/{config.NAME_MEL_TRAIN_FEATURES_FILE}.npy'
     },
     'train_label_path': './data/train_labels.csv',
     'test_data_paths': {
         'spec': f'./data/{config.NAME_SPEC_TEST_FEATURES_FILE}.npy',
         'mfcc': f'./data/{config.NAME_MFCC_TEST_FEATURES_FILE}.npy',
-        'wave': f'./data/{config.NAME_WAVE_TEST_FEATURES_FILE}.npy'
+        'wave': f'./data/{config.NAME_WAVE_TEST_FEATURES_FILE}.npy',
+        'mel': f'./data/{config.NAME_MEL_TEST_FEATURES_FILE}.npy'
     },
     'test_label_path': './data/test_labels.csv'
 }
@@ -43,7 +45,7 @@ test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 feature_train_loader = train_data_loaders[single_feature]
 feature_test_dataset= test_data_loaders[single_feature + '_dataset']
 
-model = SingleTransformerModel().to(device)
+model = SingleCNNModel().to(device)
 
 
 
@@ -140,3 +142,5 @@ for epoch in range(num_epochs):
     if epoch + 1 == num_epochs:
         draw_tool = Plotter(labels, outputs, R2_list, RMSE_list, MSE_list, MAE_list, single_feature)
         draw_tool.simply_draw()
+        draw_tool.plot_outputs_scatter()
+        draw_tool.plot_outputs_vs_labels()

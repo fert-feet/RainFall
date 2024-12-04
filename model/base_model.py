@@ -105,7 +105,7 @@ class CoAttentionModel(nn.Module):
 class SingleTransformerModel(nn.Module):
     def __init__(self):
         super(SingleTransformerModel, self).__init__()
-        self.transformer = ModifiedTransformer(n_features=40, n_head=5)
+        self.transformer = ModifiedTransformer(n_features=128, n_head=8)
 
     def forward(self, audio_mfcc):
         audio_mfcc = audio_mfcc.permute(0, 2, 1)
@@ -120,6 +120,16 @@ class SingleWaveVec2Model(nn.Module):
     def forward(self, audio_wav):
         output = self.wave_model(audio_wav)
         return output
+
+class SingleCNNModel(nn.Module):
+    def __init__(self):
+        super(SingleCNNModel, self).__init__()
+        self.cnn_model = ModifiedCNN()
+
+    def forward(self, audio_spec):
+        audio_spec = audio_spec.permute(0, 2, 1)
+        out = self.cnn_model(audio_spec)
+        return out
 
 # audio_spec = torch.randn(1, 3, 173, 200).to('cuda')
 # audio_mfcc = torch.randn(1, 173, 40).to('cuda')

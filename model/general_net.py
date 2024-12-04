@@ -14,6 +14,7 @@ import torchvision
 from torch.hub import load_state_dict_from_url
 from torchsummary import summary
 from transformers import Wav2Vec2Model
+import torchvision.transforms as transforms
 
 
 class BaseCNN_Conv(nn.Module):
@@ -38,14 +39,13 @@ class GCNN_Conv(nn.Module):
         # return self.sd(self.bn(F.relu(self.conv(x))))
         return self.dr(self.bn(F.leaky_relu(self.conv(x))))
 
-
 class ModifiedAlexNet(nn.Module):
     def __init__(self, num_classes=4, in_ch=3, pretrained=False):
         super(ModifiedAlexNet, self).__init__()
 
         model = torchvision.models.alexnet(pretrained=False)
         if pretrained:
-            pre_train_model = torch.load("./model/pre_trained_model/alex_net/alex_net_pre_train_model.pth")
+            pre_train_model = torch.load("./pre_trained_model/alex_net/alex_net_pre_train_model.pth")
             model.load_state_dict(pre_train_model)
 
         self.features = model.features
@@ -66,7 +66,7 @@ class ModifiedAlexNet(nn.Module):
         x_ = torch.flatten(x, 1)
         out = self.classifier(x_)
 
-        return x, out
+        return out
 
     def init_layer(self, layer):
         """Initialize a Linear or Convolutional layer. """
@@ -75,7 +75,6 @@ class ModifiedAlexNet(nn.Module):
         if hasattr(layer, 'bias'):
             if layer.bias is not None:
                 layer.bias.data.fill_(0.)
-
 
 class ModifiedTransformer(nn.Module):
     def __init__(self, n_features, n_head):
@@ -102,13 +101,14 @@ class ModifiedTransformer(nn.Module):
 class ModifiedResnet18(torch.nn.Module):
     def __init__(self, pretrained=False):
         super(ModifiedResnet18, self).__init__()
-        origin_model = torchvision.models.resnet18(pretrained=False)
+        self.resnet18 = torchvision.models.resnet18(pretrained=False)
         if pretrained:
-            origin_model.load_state_dict(torch.load("./model/pre_trained_model/resnet/resnet18-5c106cde.pth"))
-        self.base_model = torch.nn.Sequential(*list(origin_model.children())[:-1])
-
+            self.resnet18.load_state_dict(torch.load("./model/pre_trained_model/resnet/resnet18-5c106cde.pth"))
+        num_features = self.resnet18.fc.in_features
+        self.resnet18.fc = nn.Linear(num_features, 1)
+        # self.base_model = torch.nn.Sequential(*list(origin_model.children())[:-1])
     def forward(self, x):
-        out = self.base_model(x)
+        out = self.resnet18(x)
         return out
 
 class ModifiedWaveVec2(torch.nn.Module):
@@ -127,9 +127,30 @@ class ModifiedWaveVec2(torch.nn.Module):
         out = self.fc3(out)
         return out
 
+class ModifiedCNN(nn.Module):
+    def __init__(self):
+        super(ModifiedCNN, self).__init__()
+        self.layer1 = nn.Sequential(
+            BaseCNN_Conv(401, 128, kernel_size=3, padding=2, dilation=1))
+        self.layer2 = nn.Sequential(
+            BaseCNN_Conv(128, 256, kernel_size=3, padding=2, dilation=1))
+        self.layer3 = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1))
+        self.fc1 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 1)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = self.layer3(out).squeeze()
+        out = self.fc1(out)
+        rainfall_intensity = self.fc3(out)
+        return rainfall_intensity
 
 
-#
-# X = torch.randn(1, 64000).to('cuda')
-# model = ModifiedWaveVec2().to('cuda')
+
+
+# #
+# X = torch.randn(1, 401, 128).to('cuda')
+# model = ModifiedTransformer(n_features=128, n_head=8).to('cuda')
 # summary(model, X)

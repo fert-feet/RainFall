@@ -46,19 +46,20 @@ class FeaturesExtract:
 
     def get_mel_spectrogram(self, file_path, mfcc_max_padding=0, n_fft=2048, hop_length=512):
         """ 非新模块生成方式 """
-        try:
-            y, sr = librosa.load(file_path)
-            normalized_y = librosa.util.normalize(y)
-            mel = librosa.feature.melspectrogram(y=normalized_y, sr=sr, n_mels=self.n_mel)
-            mel_db = librosa.amplitude_to_db(abs(mel))
-            # mel_channels = np.stack([mel_db, mel_db, mel_db], axis=0) # (C, F, T), C = 3
-            normalized_mel = librosa.util.normalize(mel_db)
+        y, sr = librosa.load(file_path)
 
-        except Exception as e:
-            print("Error parsing wavefile: ", e)
-            return None
+        # 设置窗长和 hop size
+        frame_length = int(0.025 * sr)  # 25 ms
+        hop_length = int(0.010 * sr)  # 10 ms
 
-        return normalized_mel
+        # 计算梅尔谱
+        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=self.n_mel,
+                                                         n_fft=frame_length, hop_length=hop_length)
+
+        # 计算 log 梅尔谱
+        log_mel_spectrogram = librosa.power_to_db(mel_spectrogram, ref=np.max)
+
+        return log_mel_spectrogram
 
     def get_mfcc(self,  file_path, mfcc_max_padding=0):
         try:
