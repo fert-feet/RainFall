@@ -10,7 +10,8 @@ from tqdm import tqdm
 import pywt
 import spafe.features.pncc as pncc
 from moviepy.editor import *
-
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 
 class FeaturesExtract:
@@ -27,7 +28,8 @@ class FeaturesExtract:
             config.NAME_FEATURES_MEL: self.get_mel_spectrogram,
             config.NAME_FEATURES_PNCC: self.get_pncc,
             config.NAME_FEATURES_SPEC: self.generate_stft_spectrogram,
-            config.NAME_FEATURES_WAVE: self.load_audio_with_librosa
+            config.NAME_FEATURES_WAVE: self.load_audio_with_librosa,
+            config.NAME_FEATURES_WAVELET: self.get_wavelet_features
         }[config.NAME_FEATURES_PROJECT]
 
     def pre_processing(self, file_path):
@@ -107,8 +109,17 @@ class FeaturesExtract:
 
     def get_wavelet_features(self, file_path):
         y, sr = librosa.load(file_path)
-        # normalized_y = librosa.util.normalize(y)
-        wavelet = pywt.wavedec(y, 'db4', level=5)
+
+        wavelets = pywt.wavedec(y, 'db4', level=5)
+
+        scaler = StandardScaler()
+
+        features = []
+        for wavelet in wavelets:
+            scaled_wavelet = scaler.fit_transform(wavelet.reshape(-1, 1)).flatten()
+            features.append(scaled_wavelet)
+
+        A5_wavelets = wavelets[0]
 
         # 获取细节系数
         wavelet_detail = wavelet[1:]
