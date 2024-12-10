@@ -103,9 +103,9 @@ class CoAttentionModel(nn.Module):
         return output_att
 
 class SingleTransformerModel(nn.Module):
-    def __init__(self):
+    def __init__(self, n_features=40, n_head=5):
         super(SingleTransformerModel, self).__init__()
-        self.transformer = ModifiedTransformer(n_features=128, n_head=8)
+        self.transformer = ModifiedTransformer(n_features, n_head)
 
     def forward(self, audio_mfcc):
         audio_mfcc = audio_mfcc.permute(0, 2, 1)
@@ -126,9 +126,19 @@ class SingleCNNModel(nn.Module):
         super(SingleCNNModel, self).__init__()
         self.cnn_model = ModifiedCNN()
 
-    def forward(self, audio_spec):
-        audio_spec = audio_spec.permute(0, 2, 1)
-        out = self.cnn_model(audio_spec)
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        out = self.cnn_model(x)
+        return out
+
+class SingleLSTMModel(nn.Module):
+    def __init__(self, n_features=40):
+        super(SingleLSTMModel, self).__init__()
+        self.lstm_model = ModifiedLSTM(n_features)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        out = self.lstm_model(x)
         return out
 
 # audio_spec = torch.randn(1, 3, 173, 200).to('cuda')

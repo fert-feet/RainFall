@@ -7,6 +7,7 @@ import pandas as pd
 import librosa
 import librosa.display
 from tqdm import tqdm
+import pywt
 import spafe.features.pncc as pncc
 from moviepy.editor import *
 
@@ -88,22 +89,32 @@ class FeaturesExtract:
         return normalized_pncc
 
     def generate_stft_spectrogram(self, file_path, sr=22050, n_fft=2048, hop_length=512):
-        y, sr = librosa.load(file_path, sr=sr)
-
-        spec = librosa.stft(y, n_fft=n_fft, hop_length=hop_length)
-        spec_db = librosa.amplitude_to_db(np.abs(spec), ref=np.max)
-        spec_db = spec_db[:200]
+        y, sr = librosa.load(file_path)
+        normalized_y = librosa.util.normalize(y)
+        spec = librosa.stft(normalized_y, n_fft=n_fft, hop_length=hop_length)
+        spec_db = librosa.amplitude_to_db(abs(spec))
         normalized_spec = librosa.util.normalize(spec_db)
 
-        channel_spec = np.stack([normalized_spec] * 3, axis=0)
+        # channel_spec = np.stack([normalized_spec] * 3, axis=0)
 
-        return channel_spec
+        return normalized_spec
 
     def load_audio_with_librosa(self, file_path, target_sr=16000):
 
         waveform, sr = librosa.load(file_path, sr=target_sr)  # 重采样到 target_sr
         waveform = librosa.util.normalize(waveform)
         return waveform
+
+    def get_wavelet_features(self, file_path):
+        y, sr = librosa.load(file_path)
+        # normalized_y = librosa.util.normalize(y)
+        wavelet = pywt.wavedec(y, 'db4', level=5)
+
+        # 获取细节系数
+        wavelet_detail = wavelet[1:]
+
+        # 拼接细节系数
+        features = np.hstack(wavelet_detail)
 
 
 if __name__ == '__main__':

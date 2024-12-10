@@ -100,10 +100,10 @@ class Plotter:
         plt.figure(figsize=(14, 7))
 
         # 绘制输出值的折线图
-        plt.plot(self.outputs, color='#1f77b4', label='Outputs', linewidth=1.5)
+        plt.plot(self.outputs[::100], color='#1f77b4', label='Outputs', linewidth=1.5)
 
         # 绘制标签值的折线图
-        plt.plot(self.labels, color='#ff7f0e', label='Labels', linewidth=1.5)
+        plt.plot(self.labels[::100], color='#ff7f0e', label='Labels', linewidth=1.5)
 
         # 添加图例
         plt.legend(fontsize=12)

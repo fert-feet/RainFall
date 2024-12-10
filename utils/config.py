@@ -19,8 +19,8 @@ NAME_FEATURES_MEL = "mel"
 NAME_FEATURES_PNCC = "npcc"
 NAME_FEATURES_SPEC = "spec"
 NAME_FEATURES_WAVE = "wave"
-NAME_FEATURES_PROJECT = NAME_FEATURES_MEL
-NUM_N_FEATURE = N_MEL
+NAME_FEATURES_PROJECT = NAME_FEATURES_SPEC
+NUM_N_FEATURE = N_SPEC
 
 # TODO change label files name to global, because mel and mfcc share same label file
 

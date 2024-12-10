@@ -131,7 +131,7 @@ class ModifiedCNN(nn.Module):
     def __init__(self):
         super(ModifiedCNN, self).__init__()
         self.layer1 = nn.Sequential(
-            BaseCNN_Conv(401, 128, kernel_size=3, padding=2, dilation=1))
+            BaseCNN_Conv(173, 128, kernel_size=3, padding=2, dilation=1))
         self.layer2 = nn.Sequential(
             BaseCNN_Conv(128, 256, kernel_size=3, padding=2, dilation=1))
         self.layer3 = nn.Sequential(
@@ -147,10 +147,31 @@ class ModifiedCNN(nn.Module):
         rainfall_intensity = self.fc3(out)
         return rainfall_intensity
 
+class ModifiedLSTM(nn.Module):
+    def __init__(self, n_features):
+        super(ModifiedLSTM, self).__init__()
+        self.layer1 = nn.Sequential(
+            nn.LSTM(input_size=n_features, hidden_size=256))
+        self.layer2 = nn.Sequential(
+            nn.LSTM(input_size=256, hidden_size=256))
+        self.layer3 = nn.Sequential(
+            nn.Linear(256,512),nn.ReLU(),nn.BatchNorm1d(173))
+        self.linear = nn.Sequential(
+            nn.Linear(512, 128),nn.AdaptiveAvgPool1d(1))
+        self.fc1 = nn.Linear(64, 128)
+        self.fc3 = nn.Linear(173, 1)
+
+    def forward(self, x):
+        out1, state1 = self.layer1(x)
+        out2, state2 = self.layer2(out1)
+        out = self.layer3(out2)
+        out = self.linear(out).squeeze()
+        rainfall_intensity = self.fc3(out)
+        return rainfall_intensity
 
 
 
-# #
-# X = torch.randn(1, 401, 128).to('cuda')
-# model = ModifiedTransformer(n_features=128, n_head=8).to('cuda')
+
+# X = torch.randn(1, 173, 40).to('cuda')
+# model = ModifiedLSTM().to('cuda')
 # summary(model, X)

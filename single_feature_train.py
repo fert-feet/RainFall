@@ -3,7 +3,7 @@ import numpy as np
 from utils import config
 import torch
 from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
-from model.base_model import SingleCNNModel
+from model.base_model import SingleTransformerModel
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
 from tqdm import tqdm
@@ -45,7 +45,7 @@ test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 feature_train_loader = train_data_loaders[single_feature]
 feature_test_dataset= test_data_loaders[single_feature + '_dataset']
 
-model = SingleCNNModel().to(device)
+model = SingleTransformerModel(n_features=1025, n_head=5).to(device)
 
 
 
@@ -130,12 +130,14 @@ for epoch in range(num_epochs):
     outputs = np.array(outputs.squeeze().cpu(), dtype=float)
     labels = feature_test_dataset.label['RAINFALL INTENSITY'].to_numpy()
     MSE = mean_squared_error(labels, outputs)
-    RMSE = np.sqrt(mean_squared_error(labels, outputs))
+    R_MSE = np.sqrt(mean_squared_error(labels, outputs))
     MAE = mean_absolute_error(labels, outputs)
     R2 = r2_score(labels, outputs)
     print('R2_Value = {}'.format(R2))
+    print('MSE_Value = {}'.format(MSE))
+    print('R_MSE = {}'.format(R_MSE))
     R2_list.append(R2)
-    RMSE_list.append(RMSE)
+    RMSE_list.append(R_MSE)
     MSE_list.append(MSE)
     MAE_list.append(MAE)
 
