@@ -50,12 +50,14 @@ def get_train_data_loaders(data_paths, batch_size=32):
     mfcc_train_loader, _ = create_dataloader(train_data_paths['mfcc'], train_label_path, batch_size, True, dataset_collect)
     wave_train_loader, _ = create_dataloader(train_data_paths['wave'], train_label_path, batch_size, True, dataset_collect)
     mel_train_loader, _ = create_dataloader(train_data_paths['mel'], train_label_path, batch_size, True, dataset_collect)
+    wavelet_train_loader, _ = create_dataloader(train_data_paths['wavelet'], train_label_path, batch_size, True, dataset_collect)
 
     return {
         'spec': spec_train_loader,
         'mfcc': mfcc_train_loader,
         'wave': wave_train_loader,
-        'mel': mel_train_loader
+        'mel': mel_train_loader,
+        'wavelet': wavelet_train_loader,
     }
 
 def get_test_data_loaders(data_paths, batch_size=32):
@@ -66,16 +68,19 @@ def get_test_data_loaders(data_paths, batch_size=32):
     mfcc_test_loader, mfcc_test_dataset = create_dataloader(test_data_paths['mfcc'], test_label_path, batch_size, False, dataset_collect)
     wave_test_loader, wave_test_dataset = create_dataloader(test_data_paths['wave'], test_label_path, batch_size, False, dataset_collect)
     mel_test_loader, mel_test_dataset = create_dataloader(test_data_paths['mel'], test_label_path, batch_size, False, dataset_collect)
+    wavelet_test_loader, wavelet_test_dataset = create_dataloader(test_data_paths['wavelet'], test_label_path, batch_size, False, dataset_collect)
 
     return {
         'spec': spec_test_loader,
         'mfcc': mfcc_test_loader,
         'wave': wave_test_loader,
         'mel': mel_test_loader,
+        'wavelet': wavelet_test_loader,
         'spec_dataset': spec_test_dataset,
         'mfcc_dataset': mfcc_test_dataset,
         'wave_dataset': wave_test_dataset,
-        'mel_dataset': mel_test_dataset
+        'mel_dataset': mel_test_dataset,
+        'wavelet_dataset': wavelet_test_dataset,
     }
 
 def dataset_collect(batch):

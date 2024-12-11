@@ -21,13 +21,15 @@ class FeaturesExtract:
         self.n_mfcc = config.N_MFCC
         self.n_mel = config.N_MEL
         self.n_pncc = config.N_PNCC
+        self.n_level_wavelet = config.N_LEVEL_WAVELET
 
         self.extract_type_fuc = {
             config.NAME_FEATURES_MFCC: self.get_mfcc,
             config.NAME_FEATURES_MEL: self.get_mel_spectrogram,
             config.NAME_FEATURES_PNCC: self.get_pncc,
             config.NAME_FEATURES_SPEC: self.generate_stft_spectrogram,
-            config.NAME_FEATURES_WAVE: self.load_audio_with_librosa
+            config.NAME_FEATURES_WAVE: self.load_audio_with_librosa,
+            config.NAME_FEATURES_WAVELET: self.get_wavelet_features
         }[config.NAME_FEATURES_PROJECT]
 
     def pre_processing(self, file_path):
@@ -107,15 +109,65 @@ class FeaturesExtract:
 
     def get_wavelet_features(self, file_path):
         y, sr = librosa.load(file_path)
-        # normalized_y = librosa.util.normalize(y)
-        wavelet = pywt.wavedec(y, 'db4', level=5)
 
-        # 获取细节系数
-        wavelet_detail = wavelet[1:]
+        # wavelets = mo_dwt(y, 'db4', level=1)
+        wavelets = pywt.wavedec(y, 'db4', level=self.n_level_wavelet)
 
-        # 拼接细节系数
-        features = np.hstack(wavelet_detail)
+        # wavelets_mfcc_feature = get_wavelet_layer_mfcc(wavelets, sr, self.n_mfcc)
+        wavelets = np.concatenate(wavelets)
 
+        return librosa.util.normalize(split_wavelets)
+
+
+def split_data(data, seq_length=128):
+    remainder = len(data) % seq_length
+    if remainder != 0:
+        # 填充到最近的 128 的倍数
+        data = np.pad(data, (0, seq_length - remainder), mode='constant')
+
+    return data.reshape(seq_length, -1)
+
+def get_wavelet_layer_mfcc(wavelets, sr, n_mfcc):
+    all_layer_mfcc_list = []
+    for i, wavelet in enumerate(wavelets):
+        layer_mfcc = librosa.feature.mfcc(y=wavelet, sr=sr, n_mfcc=n_mfcc)
+        if layer_mfcc.shape[1] < 173:
+            # 如果列数不足，进行填充
+            layer_mfcc = np.pad(layer_mfcc, ((0, 0), (0, 173 - layer_mfcc.shape[1])), mode='constant')
+        elif layer_mfcc.shape[1] > 173:
+            # 如果列数过多，进行截断
+            layer_mfcc = layer_mfcc[:, :173]
+        all_layer_mfcc_list.append(layer_mfcc)
+    return np.vstack(all_layer_mfcc_list) # shape: [(level + 1) * n_mfcc , 173]
+
+def circular_convolve_d(h_t, v_j_1, j):
+
+    N = len(v_j_1)
+    L = len(h_t)
+    w_j = np.zeros(N)
+    l = np.arange(L)
+    for t in range(N):
+        index = np.mod(t - 2 ** (j - 1) * l, N)
+        v_p = np.array([v_j_1[ind] for ind in index])
+        w_j[t] = (np.array(h_t) * v_p).sum()
+    return w_j
+
+def mo_dwt(x, filters, level):
+
+    # filter
+    wavelet = pywt.Wavelet(filters)
+    h = wavelet.dec_hi
+    g = wavelet.dec_lo
+    h_t = np.array(h) / np.sqrt(2)
+    g_t = np.array(g) / np.sqrt(2)
+    wave_coeff = []
+    v_j_1 = x
+    for j in range(level):
+        w = circular_convolve_d(h_t, v_j_1, j + 1)
+        v_j_1 = circular_convolve_d(g_t, v_j_1, j + 1)
+        wave_coeff.append(w)
+    wave_coeff.append(v_j_1)
+    return np.vstack(wave_coeff)
 
 if __name__ == '__main__':
 
