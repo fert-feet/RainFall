@@ -15,6 +15,7 @@ from torch.hub import load_state_dict_from_url
 from torchsummary import summary
 from transformers import Wav2Vec2Model
 import torchvision.transforms as transforms
+import numpy as np
 
 
 class BaseCNN_Conv(nn.Module):
@@ -76,6 +77,39 @@ class ModifiedAlexNet(nn.Module):
             if layer.bias is not None:
                 layer.bias.data.fill_(0.)
 
+
+class AENet(nn.Module):
+    def __init__(self, num_classes=28):
+        super(AENet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=(3, 3), padding=1)
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=(3, 3), padding=1)
+        self.pool1 = nn.MaxPool2d(kernel_size=(1, 2))
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3), padding=1)
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=1)
+        self.pool2 = nn.MaxPool2d(kernel_size=(2, 2))
+
+        self.fc1 = nn.Linear(in_features=128 * 86 * 10, out_features=1024)
+        self.fc2 = nn.Linear(in_features=1024, out_features=1024)
+        self.fc3 = nn.Linear(in_features=1024, out_features=num_classes)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))  # (batch_size, 64, 173, 40)
+        x = F.relu(self.conv2(x))  # (batch_size, 64, 173, 40)
+        x = self.pool1(x)          # (batch_size, 64, 173, 20)
+        x = F.relu(self.conv3(x))  # (batch_size, 128, 173, 20)
+        x = F.relu(self.conv4(x))  # (batch_size, 128, 173, 20)
+        pool_2_out = self.pool2(x)          # (batch_size, 128, 86, 10)
+        x = pool_2_out.view(pool_2_out.size(0), -1)  # (batch_size, 128 * 86 * 10)
+        x = F.relu(self.fc1(x))    # (batch_size, 1024)
+        x = F.relu(self.fc2(x))    # (batch_size, 1024)
+        out = self.fc3(x)            # (batch_size, num_classes)
+
+        pool_2_out = pool_2_out.view(pool_2_out.size(0), pool_2_out.size(1) * pool_2_out.size(3), pool_2_out.size(2))  # [1, 128*10, 86]
+
+        pool_2_out = pool_2_out.permute(0, 2, 1)
+        return pool_2_out, out
+
+
 class ModifiedTransformer(nn.Module):
     def __init__(self, n_features, n_head):
         super(ModifiedTransformer, self).__init__()
@@ -83,6 +117,7 @@ class ModifiedTransformer(nn.Module):
         self.n_head = n_head
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=self.n_features, nhead=self.n_head, batch_first=True,dim_feedforward=512)
         self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
+        self.batch_norm = nn.BatchNorm1d(n_features)
         self.layer1 = nn.Sequential(
             self.transformer_encoder)
         self.layer4 = nn.Sequential(
@@ -159,19 +194,18 @@ class ModifiedLSTM(nn.Module):
         self.linear = nn.Sequential(
             nn.Linear(512, 128),nn.AdaptiveAvgPool1d(1))
         self.fc1 = nn.Linear(64, 128)
-        self.fc3 = nn.Linear(173, 1)
+        self.fc3 = nn.Linear(173, 40)
 
     def forward(self, x):
         out1, state1 = self.layer1(x)
         out2, state2 = self.layer2(out1)
-        out = self.layer3(out2)
+        out = self.layer3(out2) # (batch_size, 173, 512)
         out = self.linear(out).squeeze()
         rainfall_intensity = self.fc3(out)
         return rainfall_intensity
 
 
-
-
-# X = torch.randn(1, 173, 40).to('cuda')
-# model = ModifiedLSTM().to('cuda')
-# summary(model, X)
+X = torch.randn(1, 173, 40).cuda()
+model = ModifiedLSTM(40).cuda()
+summary(model, X)
+print(model(X).shape)

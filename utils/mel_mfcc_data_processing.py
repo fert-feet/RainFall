@@ -90,16 +90,17 @@ class FeaturesExtract:
 
         return normalized_pncc
 
-    def generate_stft_spectrogram(self, file_path, sr=22050, n_fft=2048, hop_length=512):
+    @staticmethod
+    def generate_stft_spectrogram(file_path, sr=22050, n_fft=2048, hop_length=512):
         y, sr = librosa.load(file_path)
         normalized_y = librosa.util.normalize(y)
         spec = librosa.stft(normalized_y, n_fft=n_fft, hop_length=hop_length)
         spec_db = librosa.amplitude_to_db(abs(spec))
-        normalized_spec = librosa.util.normalize(spec_db)
+        s_db_normalized = (spec_db - np.min(spec_db)) / (np.max(spec_db) - np.min(spec_db))
 
         # channel_spec = np.stack([normalized_spec] * 3, axis=0)
 
-        return normalized_spec
+        return s_db_normalized
 
     def load_audio_with_librosa(self, file_path, target_sr=16000):
 
@@ -111,12 +112,12 @@ class FeaturesExtract:
         y, sr = librosa.load(file_path)
 
         # wavelets = mo_dwt(y, 'db4', level=1)
-        wavelets = pywt.wavedec(y, 'db4', level=self.n_level_wavelet)
+        wavelets = mo_dwt(y, 'haar', level=self.n_level_wavelet)
 
-        # wavelets_mfcc_feature = get_wavelet_layer_mfcc(wavelets, sr, self.n_mfcc)
-        wavelets = np.concatenate(wavelets)
+        wavelets_mfcc_feature = get_wavelet_layer_mfcc(wavelets, sr, 40)
+        # wavelets = np.concatenate(wavelets)
 
-        return librosa.util.normalize(split_wavelets)
+        return librosa.util.normalize(wavelets_mfcc_feature)
 
 
 def split_data(data, seq_length=128):
@@ -131,41 +132,42 @@ def get_wavelet_layer_mfcc(wavelets, sr, n_mfcc):
     all_layer_mfcc_list = []
     for i, wavelet in enumerate(wavelets):
         layer_mfcc = librosa.feature.mfcc(y=wavelet, sr=sr, n_mfcc=n_mfcc)
-        if layer_mfcc.shape[1] < 173:
-            # 如果列数不足，进行填充
-            layer_mfcc = np.pad(layer_mfcc, ((0, 0), (0, 173 - layer_mfcc.shape[1])), mode='constant')
-        elif layer_mfcc.shape[1] > 173:
-            # 如果列数过多，进行截断
-            layer_mfcc = layer_mfcc[:, :173]
+        # if layer_mfcc.shape[1] < 173:
+        #     # 如果列数不足，进行填充
+        #     layer_mfcc = np.pad(layer_mfcc, ((0, 0), (0, 173 - layer_mfcc.shape[1])), mode='constant')
+        # elif layer_mfcc.shape[1] > 173:
+        #     # 如果列数过多，进行截断
+        #     layer_mfcc = layer_mfcc[:, :173]
         all_layer_mfcc_list.append(layer_mfcc)
     return np.vstack(all_layer_mfcc_list) # shape: [(level + 1) * n_mfcc , 173]
 
-def circular_convolve_d(h_t, v_j_1, j):
 
+def circular_convolve_d(h_t, v_j_1, j):
     N = len(v_j_1)
     L = len(h_t)
     w_j = np.zeros(N)
     l = np.arange(L)
-    for t in range(N):
-        index = np.mod(t - 2 ** (j - 1) * l, N)
-        v_p = np.array([v_j_1[ind] for ind in index])
-        w_j[t] = (np.array(h_t) * v_p).sum()
+    indices = np.mod(np.arange(N)[:, None] - 2 ** (j - 1) * l, N)
+    v_p = v_j_1[indices]
+    w_j = np.sum(h_t * v_p, axis=1)
     return w_j
 
-def mo_dwt(x, filters, level):
 
-    # filter
+def mo_dwt(x, filters, level):
     wavelet = pywt.Wavelet(filters)
     h = wavelet.dec_hi
     g = wavelet.dec_lo
     h_t = np.array(h) / np.sqrt(2)
     g_t = np.array(g) / np.sqrt(2)
+
     wave_coeff = []
     v_j_1 = x
+
     for j in range(level):
         w = circular_convolve_d(h_t, v_j_1, j + 1)
         v_j_1 = circular_convolve_d(g_t, v_j_1, j + 1)
         wave_coeff.append(w)
+
     wave_coeff.append(v_j_1)
     return np.vstack(wave_coeff)
 

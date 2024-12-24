@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from transformers import Wav2Vec2Model
 from torchsummary import summary
 from .general_net import *
+from paper_model.iTransformer import Model as iTransformer
 
 
 # __all__ = ['Ser_Model']
@@ -102,6 +103,21 @@ class CoAttentionModel(nn.Module):
 
         return output_att
 
+class CoAENetTransformerModel(nn.Module):
+    def __init__(self):
+        super(CoAENetTransformerModel, self).__init__()
+        self.ae_net_model = AENet()
+        self.transformer_model = ModifiedTransformer(1280, 5)
+
+    def forward(self, audio_mfcc):
+        audio_mfcc = audio_mfcc.permute(0, 2, 1)
+        audio_mfcc = audio_mfcc.unsqueeze(1)
+        audio_mfcc = audio_mfcc.repeat(1, 3, 1, 1)
+        ae_output, _ = self.ae_net_model(audio_mfcc)
+        output = self.transformer_model(ae_output)
+        return output
+
+
 class SingleTransformerModel(nn.Module):
     def __init__(self, n_features=40, n_head=5):
         super(SingleTransformerModel, self).__init__()
@@ -141,9 +157,30 @@ class SingleLSTMModel(nn.Module):
         out = self.lstm_model(x)
         return out
 
-# audio_spec = torch.randn(1, 3, 173, 200).to('cuda')
-# audio_mfcc = torch.randn(1, 173, 40).to('cuda')
-# audio_wav = torch.randn(1, 88200).to('cuda')
-#
-# model = Base_Model().to('cuda')
-# summary(model, (audio_spec, audio_mfcc, audio_wav))
+class CoLSTMTransformerModel(nn.Module):
+    def __init__(self):
+        super(CoLSTMTransformerModel, self).__init__()
+        self.lstm_model = ModifiedLSTM(40)
+        self.transformer_model = ModifiedTransformer(40, 5)
+
+    def forward(self, audio_mfcc):
+        audio_mfcc = audio_mfcc.permute(0, 2, 1)
+        audio_mfcc, _ = self.lstm_model(audio_mfcc)
+        output = self.transformer_model(audio_mfcc)
+        return output
+
+class SingleITransformerModel(nn.Module):
+    def __init__(self):
+        super(SingleITransformerModel, self).__init__()
+        self.transformer_model = iTransformer()
+
+    def forward(self, audio_mfcc):
+        audio_mfcc = audio_mfcc.permute(0, 2, 1)
+        output = self.transformer_model(audio_mfcc)
+        return output
+
+
+
+# input_m = torch.randn(1, 40, 173)
+# model = CoAENetTransformerModel().to('cuda')
+# summary(model, input_m)

@@ -3,7 +3,7 @@ import numpy as np
 from utils import config
 import torch
 from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
-from model.base_model import SingleTransformerModel
+from model.base_model import SingleLSTMModel, SingleTransformerModel, CoAENetTransformerModel
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
 from tqdm import tqdm
@@ -47,7 +47,7 @@ test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 feature_train_loader = train_data_loaders[single_feature]
 feature_test_dataset= test_data_loaders[single_feature + '_dataset']
 
-model = SingleTransformerModel(n_features=128, n_head=8).to(device)
+model = CoAENetTransformerModel().to(device)
 
 
 
