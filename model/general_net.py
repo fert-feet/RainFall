@@ -204,8 +204,8 @@ class ModifiedLSTM(nn.Module):
         rainfall_intensity = self.fc3(out)
         return rainfall_intensity
 
-
-X = torch.randn(1, 173, 40).cuda()
-model = ModifiedLSTM(40).cuda()
-summary(model, X)
-print(model(X).shape)
+#
+# X = torch.randn(1, 173, 40).cuda()
+# model = ModifiedLSTM(40).cuda()
+# summary(model, X)
+# print(model(X).shape)

@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from transformers import Wav2Vec2Model
 from torchsummary import summary
-from .general_net import *
+from general_net import *
 from paper_model.iTransformer import Model as iTransformer
 
 
@@ -175,12 +175,12 @@ class SingleITransformerModel(nn.Module):
         self.transformer_model = iTransformer()
 
     def forward(self, audio_mfcc):
-        audio_mfcc = audio_mfcc.permute(0, 2, 1)
+        # audio_mfcc = audio_mfcc.permute(0, 2, 1)
         output = self.transformer_model(audio_mfcc)
         return output
 
 
 
-# input_m = torch.randn(1, 40, 173)
-# model = CoAENetTransformerModel().to('cuda')
-# summary(model, input_m)
+input_m = torch.randn(1, 40, 173)
+model = SingleITransformerModel().to('cuda')
+summary(model, input_m)
