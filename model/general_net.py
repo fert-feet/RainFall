@@ -206,6 +206,5 @@ class ModifiedLSTM(nn.Module):
 
 #
 # X = torch.randn(1, 173, 40).cuda()
-# model = ModifiedLSTM(40).cuda()
+# model = ModifiedTransformer(n_features=40, n_head=5).cuda()
 # summary(model, X)
-# print(model(X).shape)

@@ -8,8 +8,8 @@ import torch.nn.functional as F
 
 from transformers import Wav2Vec2Model
 from torchsummary import summary
-from general_net import *
-from paper_model.iTransformer import Model as iTransformer
+from .general_net import *
+from .paper_model.iTransformer import Model as iTransformer
 
 
 # __all__ = ['Ser_Model']
@@ -170,17 +170,18 @@ class CoLSTMTransformerModel(nn.Module):
         return output
 
 class SingleITransformerModel(nn.Module):
-    def __init__(self):
+    def __init__(self, seq_len=173, turn_to_d_model=40, n_heads=5):
         super(SingleITransformerModel, self).__init__()
-        self.transformer_model = iTransformer()
+        self.transformer_model = iTransformer(seq_len, turn_to_d_model, n_heads)
 
     def forward(self, audio_mfcc):
-        # audio_mfcc = audio_mfcc.permute(0, 2, 1)
+        audio_mfcc = audio_mfcc.permute(0, 2, 1)[:, :, :200]
         output = self.transformer_model(audio_mfcc)
         return output
 
 
 
-input_m = torch.randn(1, 40, 173)
-model = SingleITransformerModel().to('cuda')
-summary(model, input_m)
+# input_m = torch.randn(1, 40, 173).cuda()
+# model = SingleITransformerModel().to('cuda')
+# summary(model, input_m)
+# print(model(input_m).shape)

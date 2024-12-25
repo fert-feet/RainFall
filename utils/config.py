@@ -21,8 +21,8 @@ NAME_FEATURES_PNCC = "npcc"
 NAME_FEATURES_SPEC = "spec"
 NAME_FEATURES_WAVE = "wave"
 NAME_FEATURES_WAVELET = "wavelet"
-NAME_FEATURES_PROJECT = NAME_FEATURES_MFCC
-NUM_N_FEATURE = N_MFCC
+NAME_FEATURES_PROJECT = NAME_FEATURES_MEL
+NUM_N_FEATURE = N_MEL
 
 # TODO change label files name to global, because mel and mfcc share same label file
 

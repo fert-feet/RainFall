@@ -51,13 +51,8 @@ class FeaturesExtract:
         """ 非新模块生成方式 """
         y, sr = librosa.load(file_path)
 
-        # 设置窗长和 hop size
-        frame_length = int(0.025 * sr)  # 25 ms
-        hop_length = int(0.010 * sr)  # 10 ms
-
         # 计算梅尔谱
-        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=self.n_mel,
-                                                         n_fft=frame_length, hop_length=hop_length)
+        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=self.n_mel)
 
         # 计算 log 梅尔谱
         log_mel_spectrogram = librosa.power_to_db(mel_spectrogram, ref=np.max)
