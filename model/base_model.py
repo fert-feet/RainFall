@@ -158,16 +158,29 @@ class SingleLSTMModel(nn.Module):
         return out
 
 class CoLSTMTransformerModel(nn.Module):
-    def __init__(self):
+    def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5):
         super(CoLSTMTransformerModel, self).__init__()
-        self.lstm_model = ModifiedLSTM(40)
-        self.transformer_model = ModifiedTransformer(40, 5)
+        self.transformer_model = ModifiedEncoderOnlyTransformer(n_features, n_head)
+
+        self.bi_lstm_layers = ModifiedBiLSTM(n_features, hidden_layer_sizes)
+
+        self.avg_pool_layer = nn.Sequential(
+            nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
+        self.fc1 = nn.Linear(256, 128)
+        self.fc2 = nn.Linear(128, 1)
+
 
     def forward(self, audio_mfcc):
         audio_mfcc = audio_mfcc.permute(0, 2, 1)
-        audio_mfcc, _ = self.lstm_model(audio_mfcc)
-        output = self.transformer_model(audio_mfcc)
-        return output
+
+        transformer_output = self.transformer_model(audio_mfcc)
+        bi_lstm_output = self.bi_lstm_layers(transformer_output)
+
+        out = self.avg_pool_layer(bi_lstm_output)
+        out = out.reshape(out.shape[0], -1)
+        out = self.fc1(out)
+        out = self.fc2(out)
+        return out
 
 class SingleITransformerModel(nn.Module):
     def __init__(self, seq_len=173, turn_to_d_model=40, n_heads=5):
@@ -181,7 +194,6 @@ class SingleITransformerModel(nn.Module):
 
 
 
-# input_m = torch.randn(1, 40, 173).cuda()
-# model = SingleITransformerModel().to('cuda')
-# summary(model, input_m)
-# print(model(input_m).shape)
+input_m = torch.randn(1, 40, 173).cuda()
+model = CoLSTMTransformerModel(n_features=40, n_head=40).to('cuda')
+summary(model, input_m)

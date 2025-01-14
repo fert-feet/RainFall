@@ -39,3 +39,5 @@ import matplotlib.pyplot as plt
 # import numpy as np
 
 # Define the adjacency matrix
+
+print(len([64, 64]))

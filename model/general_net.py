@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 from torch.hub import load_state_dict_from_url
-# from torchsummary import summary
+from torchsummary import summary
 from transformers import Wav2Vec2Model
 import torchvision.transforms as transforms
 import numpy as np
@@ -133,6 +133,20 @@ class ModifiedTransformer(nn.Module):
         out = self.fc3(out)
         return out
 
+class ModifiedEncoderOnlyTransformer(nn.Module):
+    def __init__(self, n_features, n_head):
+        super(ModifiedEncoderOnlyTransformer, self).__init__()
+        self.n_features = n_features
+        self.n_head = n_head
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=self.n_features, nhead=self.n_head, batch_first=True,dim_feedforward=512)
+        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
+        self.layer1 = nn.Sequential(
+            self.transformer_encoder)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        return out
+
 class ModifiedResnet18(torch.nn.Module):
     def __init__(self, pretrained=False):
         super(ModifiedResnet18, self).__init__()
@@ -204,7 +218,29 @@ class ModifiedLSTM(nn.Module):
         rainfall_intensity = self.fc3(out)
         return rainfall_intensity
 
+class ModifiedBiLSTM(nn.Module):
+    def __init__(self, input_dim, hidden_layer_sizes=None):
+        super(ModifiedBiLSTM, self).__init__()
+        if hidden_layer_sizes is None:
+            hidden_layer_sizes = [64, 64]
+        self.num_layers = len(hidden_layer_sizes)
+
+        self.bi_lstm_layers = nn.ModuleList()
+
+        self.bi_lstm_layers.append(nn.LSTM(input_dim, hidden_layer_sizes[0], batch_first=True, bidirectional=True))
+        for i in range(1, self.num_layers):
+            self.bi_lstm_layers.append(
+                nn.LSTM(hidden_layer_sizes[i - 1] * 2, hidden_layer_sizes[i], batch_first=True, bidirectional=True))
+
+    def forward(self, x):
+        bi_lstm_out = x
+        for bi_lstm in self.bi_lstm_layers:
+            bi_lstm_out, _ = bi_lstm(bi_lstm_out)
+
+        out = bi_lstm_out
+        return out
+
 #
 # X = torch.randn(1, 173, 40).cuda()
-# model = ModifiedTransformer(n_features=40, n_head=5).cuda()
+# model = ModifiedBiLSTM(40).cuda()
 # summary(model, X)
