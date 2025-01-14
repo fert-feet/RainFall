@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .Transformer_EncDec import Encoder, EncoderLayer
 from .SelfAttention_Family import FullAttention, AttentionLayer
 from .Embed import DataEmbedding_inverted
-from torchsummary import summary
+# from torchsummary import summary
 import numpy as np
 
 

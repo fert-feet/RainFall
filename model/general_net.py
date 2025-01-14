@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 from torch.hub import load_state_dict_from_url
-from torchsummary import summary
+# from torchsummary import summary
 from transformers import Wav2Vec2Model
 import torchvision.transforms as transforms
 import numpy as np

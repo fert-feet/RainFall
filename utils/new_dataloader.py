@@ -46,42 +46,27 @@ def get_train_data_loaders(data_paths, batch_size=32):
     train_data_paths = data_paths['train_data_paths']
     train_label_path = data_paths['train_label_path']
 
-    spec_train_loader, _ = create_dataloader(train_data_paths['spec'], train_label_path, batch_size, True, dataset_collect)
-    mfcc_train_loader, _ = create_dataloader(train_data_paths['mfcc'], train_label_path, batch_size, True, dataset_collect)
-    wave_train_loader, _ = create_dataloader(train_data_paths['wave'], train_label_path, batch_size, True, dataset_collect)
-    mel_train_loader, _ = create_dataloader(train_data_paths['mel'], train_label_path, batch_size, True, dataset_collect)
-    wavelet_train_loader, _ = create_dataloader(train_data_paths['wavelet'], train_label_path, batch_size, True, dataset_collect)
+    train_loaders = {}
+    for feature_name, feature_path in train_data_paths.items():
+        if feature_path:  # Check if the feature path is not empty
+            train_loader, _ = create_dataloader(feature_path, train_label_path, batch_size, True, dataset_collect)
+            train_loaders[feature_name] = train_loader
 
-    return {
-        'spec': spec_train_loader,
-        'mfcc': mfcc_train_loader,
-        'wave': wave_train_loader,
-        'mel': mel_train_loader,
-        'wavelet': wavelet_train_loader,
-    }
+    return train_loaders
 
 def get_test_data_loaders(data_paths, batch_size=32):
     test_data_paths = data_paths['test_data_paths']
     test_label_path = data_paths['test_label_path']
 
-    spec_test_loader, spec_test_dataset = create_dataloader(test_data_paths['spec'], test_label_path, batch_size, False, dataset_collect)
-    mfcc_test_loader, mfcc_test_dataset = create_dataloader(test_data_paths['mfcc'], test_label_path, batch_size, False, dataset_collect)
-    wave_test_loader, wave_test_dataset = create_dataloader(test_data_paths['wave'], test_label_path, batch_size, False, dataset_collect)
-    mel_test_loader, mel_test_dataset = create_dataloader(test_data_paths['mel'], test_label_path, batch_size, False, dataset_collect)
-    wavelet_test_loader, wavelet_test_dataset = create_dataloader(test_data_paths['wavelet'], test_label_path, batch_size, False, dataset_collect)
+    test_loaders = {}
+    for feature_name, feature_path in test_data_paths.items():
+        if feature_path:  # Check if the feature path is not empty
+            test_loader, test_dataset = create_dataloader(feature_path, test_label_path, batch_size, False, dataset_collect)
+            test_loaders[feature_name] = test_loader
+            test_loaders[f'{feature_name}_dataset'] = test_dataset
 
-    return {
-        'spec': spec_test_loader,
-        'mfcc': mfcc_test_loader,
-        'wave': wave_test_loader,
-        'mel': mel_test_loader,
-        'wavelet': wavelet_test_loader,
-        'spec_dataset': spec_test_dataset,
-        'mfcc_dataset': mfcc_test_dataset,
-        'wave_dataset': wave_test_dataset,
-        'mel_dataset': mel_test_dataset,
-        'wavelet_dataset': wavelet_test_dataset,
-    }
+    return test_loaders
+
 
 def dataset_collect(batch):
     features,batch_rainfall_intensities = [],[]

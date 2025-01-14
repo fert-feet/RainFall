@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from transformers import Wav2Vec2Model
-from torchsummary import summary
+# from torchsummary import summary
 from .general_net import *
 from .paper_model.iTransformer import Model as iTransformer
 
