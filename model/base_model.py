@@ -194,6 +194,7 @@ class SingleITransformerModel(nn.Module):
 
 
 
-input_m = torch.randn(1, 40, 173).cuda()
-model = CoLSTMTransformerModel(n_features=40, n_head=40).to('cuda')
-summary(model, input_m)
+# input_m = torch.randn(1, 40, 173).cuda()
+# model = CoLSTMTransformerModel(n_features=40, n_head=40).to('cuda')
+# summary(model, input_m)
+  

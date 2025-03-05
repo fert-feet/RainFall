@@ -24,7 +24,7 @@ class FeaturesExtract:
         self.n_level_wavelet = config.N_LEVEL_WAVELET
 
         self.extract_type_fuc = {
-            config.NAME_FEATURES_MFCC: self.get_mfcc,
+            config.NAME_FEATURES_MFCC: self.get_new_mfcc,
             config.NAME_FEATURES_MEL: self.get_mel_spectrogram,
             config.NAME_FEATURES_PNCC: self.get_pncc,
             config.NAME_FEATURES_SPEC: self.generate_stft_spectrogram,
@@ -72,6 +72,15 @@ class FeaturesExtract:
 
         return normalized_mfcc
 
+    def get_new_mfcc(self, file_path):
+        y, sr = librosa.load(file_path)
+
+        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
+        mfcc = librosa.feature.mfcc(S=librosa.power_to_db(mel_spectrogram), n_mfcc=self.n_mfcc)
+        normalized_mfcc = librosa.util.normalize(mfcc)
+
+        return normalized_mfcc
+
     def get_pncc(self, file_path):
         try:
             y, sr = librosa.load(file_path)
@@ -86,7 +95,7 @@ class FeaturesExtract:
         return normalized_pncc
 
     @staticmethod
-    def generate_stft_spectrogram(file_path, sr=22050, n_fft=2048, hop_length=512):
+    def generate_stft_spectrogram(file_path, sr=22050, n_fft=2048, hop_length=512):                                  
         y, sr = librosa.load(file_path)
         normalized_y = librosa.util.normalize(y)
         spec = librosa.stft(normalized_y, n_fft=n_fft, hop_length=hop_length)
