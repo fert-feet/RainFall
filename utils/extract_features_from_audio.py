@@ -1,3 +1,4 @@
+import logging
 import os.path
 
 import config
@@ -10,8 +11,10 @@ from tqdm import tqdm
 import pywt
 import spafe.features.pncc as pncc
 from moviepy.editor import *
+import logging
+from logging import debug, error
 
-
+logging.basicConfig(format='%(levelname)s:%(asctime)s::%(message)s', level = logging.ERROR)
 
 class FeaturesExtract:
     def __init__(self):
@@ -73,11 +76,16 @@ class FeaturesExtract:
         return normalized_mfcc
 
     def get_new_mfcc(self, file_path):
-        y, sr = librosa.load(file_path)
+        # noinspection PyBroadException
+        try:
+            y, sr = librosa.load(file_path)
+            mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=256)
+            mfcc = librosa.feature.mfcc(S=librosa.power_to_db(mel_spectrogram), n_mfcc=self.n_mfcc)
+            normalized_mfcc = librosa.util.normalize(mfcc)
 
-        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
-        mfcc = librosa.feature.mfcc(S=librosa.power_to_db(mel_spectrogram), n_mfcc=self.n_mfcc)
-        normalized_mfcc = librosa.util.normalize(mfcc)
+        except Exception as e:
+            error(f"extract features from audio error: {e} from {file_path}")
+            return None
 
         return normalized_mfcc
 
@@ -124,6 +132,34 @@ class FeaturesExtract:
         return librosa.util.normalize(wavelets_mfcc_feature)
 
 
+def trim_mute(y, top_db=15):
+    sr = 22050
+    target_length = 3 * sr  # 3秒的样本数
+    min_top_db = 1  # 允许的最小阈值
+
+    # 逐步降低静音阈值直到音频长度 ≤ 3秒
+    while True:
+        intervals = librosa.effects.split(y, top_db=top_db)
+        y_trimmed = librosa.effects.remix(y, intervals)
+        current_length = len(y_trimmed)
+
+        # 当满足长度要求或阈值触底时退出循环
+        if current_length <= target_length or top_db <= min_top_db:
+            break
+
+        top_db -= 1  # 逐步减小阈值
+
+    # 补零到目标长度（仅在不足时）
+    if len(y_trimmed) < target_length:
+        pad_length = target_length - len(y_trimmed)
+        pad_before = pad_length // 2
+        pad_after = pad_length - pad_before
+        y_trimmed = np.pad(y_trimmed, (pad_before, pad_after), mode='constant')
+    else:
+        start = (current_length - target_length) // 2
+        y_trimmed = y_trimmed[start:start + target_length]
+
+    return y_trimmed
 def split_data(data, seq_length=128):
     remainder = len(data) % seq_length
     if remainder != 0:

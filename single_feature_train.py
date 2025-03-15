@@ -43,7 +43,6 @@ model = CoLSTMTransformerModel().to(device)
 
 
 
-
 Init_lr = 5e-4
 Min_lr = Init_lr * 0.01
 optimizer_type = "adam"
