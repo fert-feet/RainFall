@@ -157,26 +157,63 @@ class SingleLSTMModel(nn.Module):
         out = self.lstm_model(x)
         return out
 
-class CoLSTMTransformerModel(nn.Module):
-    def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5):
-        super(CoLSTMTransformerModel, self).__init__()
-        self.transformer_model = ModifiedEncoderOnlyTransformer(n_features, n_head)
+# class CoLSTMTransformerModel(nn.Module):
+#     def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5):
+#         super(CoLSTMTransformerModel, self).__init__()
+#         self.transformer_model = ModifiedEncoderOnlyTransformer(n_features, n_head)
+#
+#         self.bi_lstm_layers = ModifiedBiLSTM(n_features, hidden_layer_sizes)
+#
+#         self.avg_pool_layer = nn.Sequential(
+#             nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
+#         self.fc1 = nn.Linear(256, 128)
+#         self.fc2 = nn.Linear(128, 1)
+#
+#
+#     def forward(self, audio_mfcc):
+#         audio_mfcc = audio_mfcc.permute(0, 2, 1)
+#
+#         transformer_output = self.transformer_model(audio_mfcc)
+#         bi_lstm_output = self.bi_lstm_layers(transformer_output)
+#
+#         out = self.avg_pool_layer(bi_lstm_output)
+#         out = out.reshape(out.shape[0], -1)
+#         out = self.fc1(out)
+#         out = self.fc2(out)
+#         return out
 
+
+class CoLSTMTransformerResidualModel(nn.Module):
+    def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5):
+        super(CoLSTMTransformerResidualModel, self).__init__()
+        # 原始组件
+        self.transformer_model = ModifiedEncoderOnlyTransformer(n_features, n_head)
         self.bi_lstm_layers = ModifiedBiLSTM(n_features, hidden_layer_sizes)
 
-        self.avg_pool_layer = nn.Sequential(
-            nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
+        # 新增残差相关组件
+        self.residual_norm = nn.LayerNorm(128)  # 层归一化
+        self.dimension_align = nn.Linear(n_features, 128)  # 维度对齐（可选）
+
+        self.avg_pool_layer = nn.Sequential(nn.AdaptiveAvgPool2d(16))
         self.fc1 = nn.Linear(256, 128)
         self.fc2 = nn.Linear(128, 1)
-
 
     def forward(self, audio_mfcc):
         audio_mfcc = audio_mfcc.permute(0, 2, 1)
 
+        # Transformer输出
         transformer_output = self.transformer_model(audio_mfcc)
+
+        # LSTM处理
         bi_lstm_output = self.bi_lstm_layers(transformer_output)
 
-        out = self.avg_pool_layer(bi_lstm_output)
+        # 残差连接（核心修改）
+        residual = self.dimension_align(transformer_output)  # 维度对齐
+        residual_output = bi_lstm_output + residual  # 残差相加
+        residual_output = self.residual_norm(residual_output)  # 层归一化
+
+        # 后续处理
+        out = self.avg_pool_layer(residual_output)
         out = out.reshape(out.shape[0], -1)
         out = self.fc1(out)
         out = self.fc2(out)

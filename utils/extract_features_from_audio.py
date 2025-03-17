@@ -79,7 +79,7 @@ class FeaturesExtract:
         # noinspection PyBroadException
         try:
             y, sr = librosa.load(file_path)
-            mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=256)
+            mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
             mfcc = librosa.feature.mfcc(S=librosa.power_to_db(mel_spectrogram), n_mfcc=self.n_mfcc)
             normalized_mfcc = librosa.util.normalize(mfcc)
 

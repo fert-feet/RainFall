@@ -12,6 +12,11 @@ from sklearn.metrics import mean_squared_error  # mse
 from sklearn.metrics import mean_absolute_error  # mae
 from sklearn.metrics import r2_score  # R square
 from utils.draw import Plotter
+import logging
+from logging import info
+
+# 日志
+logging.basicConfig(format='%(levelname)s:s:%(message)s', level = logging.INFO, filename="./logs/log-file/train.log", filemode="w")
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -39,7 +44,7 @@ test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 feature_train_loader = train_data_loaders[single_feature]
 feature_test_dataset= test_data_loaders[single_feature + '_dataset']
 
-model = CoLSTMTransformerModel().to(device)
+model = CoLSTMTransformerResidualModel().to(device)
 
 
 
@@ -75,6 +80,8 @@ RMSE_list = []
 train_loss_list = []
 test_loss_list = []
 
+# TODO 优化
+best_epoch = 1
 
 for epoch in range(num_epochs):
     total_loss = 0
@@ -133,6 +140,9 @@ for epoch in range(num_epochs):
     RMSE_list.append(R_MSE)
     MSE_list.append(MSE)
     MAE_list.append(MAE)
+
+    best_epoch = epoch + 1 if max(R2_list) == R2 else best_epoch
+    info(f"Epoch = {epoch + 1}, R2_Value = {R2}, MSE_Value = {MSE}, R_MSE = {R_MSE}, Best_R2 = {max(R2_list)}, Best_Epoch = {best_epoch}")
 
     if epoch + 1 == num_epochs:
         draw_tool = Plotter(labels, outputs, R2_list, RMSE_list, MSE_list, MAE_list, single_feature)
