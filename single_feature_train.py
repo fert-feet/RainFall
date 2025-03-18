@@ -19,7 +19,7 @@ import logging
 from logging import info
 
 # 日志
-logging.basicConfig(format='%(levelname)s:s:%(message)s', level = logging.INFO, filename="./logs/log-file/train.log", filemode="w")
+logging.basicConfig(format='%(levelname)s:s:%(message)s', level=logging.INFO, filename="./logs/log-file/train.log", filemode="w")
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -128,7 +128,7 @@ for epoch in range(num_epochs):
         for index in tqdm(range(0, acoustic_feature.shape[0], step)):
             step_acoustic_feature = acoustic_feature[index:index + step].to(torch.float)
             rainfall_intensity = model(step_acoustic_feature)
-            outputs = torch.cat((outputs, rainfall_intensity)) if index > 0 else rainfall_intensity
+            outputs = torch.cat([outputs, rainfall_intensity], dim=0) if index > 0 else rainfall_intensity
 
     outputs = np.array(outputs.squeeze().cpu(), dtype=float)
     labels = feature_test_dataset.label['RAINFALL INTENSITY'].to_numpy()

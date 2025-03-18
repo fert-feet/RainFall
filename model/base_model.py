@@ -157,30 +157,30 @@ class SingleLSTMModel(nn.Module):
         out = self.lstm_model(x)
         return out
 
-# class CoLSTMTransformerModel(nn.Module):
-#     def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5):
-#         super(CoLSTMTransformerModel, self).__init__()
-#         self.transformer_model = ModifiedEncoderOnlyTransformer(n_features, n_head)
-#
-#         self.bi_lstm_layers = ModifiedBiLSTM(n_features, hidden_layer_sizes)
-#
-#         self.avg_pool_layer = nn.Sequential(
-#             nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
-#         self.fc1 = nn.Linear(256, 128)
-#         self.fc2 = nn.Linear(128, 1)
-#
-#
-#     def forward(self, audio_mfcc):
-#         audio_mfcc = audio_mfcc.permute(0, 2, 1)
-#
-#         transformer_output = self.transformer_model(audio_mfcc)
-#         bi_lstm_output = self.bi_lstm_layers(transformer_output)
-#
-#         out = self.avg_pool_layer(bi_lstm_output)
-#         out = out.reshape(out.shape[0], -1)
-#         out = self.fc1(out)
-#         out = self.fc2(out)
-#         return out
+class CoLSTMTransformerModel(nn.Module):
+    def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5):
+        super(CoLSTMTransformerModel, self).__init__()
+        self.transformer_model = ModifiedEncoderOnlyTransformer(n_features, n_head)
+
+        self.bi_lstm_layers = ModifiedBiLSTM(n_features, hidden_layer_sizes)
+
+        self.avg_pool_layer = nn.Sequential(
+            nn.AdaptiveAvgPool2d(16))  # 2d pooling input (batch_size, seq, time)
+        self.fc1 = nn.Linear(256, 128)
+        self.fc2 = nn.Linear(128, 1)
+
+
+    def forward(self, audio_mfcc):
+        audio_mfcc = audio_mfcc.permute(0, 2, 1)
+
+        transformer_output = self.transformer_model(audio_mfcc)
+        bi_lstm_output = self.bi_lstm_layers(transformer_output)
+
+        out = self.avg_pool_layer(bi_lstm_output)
+        out = out.reshape(out.shape[0], -1)
+        out = self.fc1(out)
+        out = self.fc2(out)
+        return out
 
 
 class CoLSTMTransformerResidualModel(nn.Module):
