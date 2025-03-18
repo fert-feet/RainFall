@@ -1,3 +1,6 @@
+import os
+import random
+
 import numpy as np
 
 from utils import config
@@ -44,7 +47,7 @@ test_data_loaders = get_test_data_loaders(data_paths, batch_size)
 feature_train_loader = train_data_loaders[single_feature]
 feature_test_dataset= test_data_loaders[single_feature + '_dataset']
 
-model = CoLSTMTransformerResidualModel().to(device)
+model = CoLSTMTransformerModel().to(device)
 
 
 
