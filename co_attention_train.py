@@ -2,7 +2,7 @@ import numpy as np
 
 from utils import config
 import torch
-from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
+from utils.new_dataloader import train_data_loaders, test_data_loaders
 from model.base_model import CoAttentionModel
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
@@ -36,8 +36,8 @@ data_paths = {
     'test_label_path': './data/test_labels.csv'
 }
 
-train_data_loaders = get_train_data_loaders(data_paths, batch_size)
-test_data_loaders = get_test_data_loaders(data_paths, batch_size)
+train_data_loaders = train_data_loaders(data_paths, batch_size)
+test_data_loaders = test_data_loaders(data_paths, batch_size)
 
 
 model = CoAttentionModel().to(device)

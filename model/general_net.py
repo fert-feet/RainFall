@@ -16,6 +16,7 @@ from torchsummary import summary
 from transformers import Wav2Vec2Model
 import torchvision.transforms as transforms
 import numpy as np
+import librosa
 
 
 class BaseCNN_Conv(nn.Module):
@@ -241,6 +242,61 @@ class ModifiedBiLSTM(nn.Module):
         return out
 
 #
-# X = torch.randn(1, 173, 40).cuda()
-# model = ModifiedBiLSTM(40).cuda()
-# summary(model, X)
+# 添加 MFCCLayer 网络层
+#
+class MFCCLayer(nn.Module):
+    def __init__(self, sr=22050, n_mfcc=40, n_fft=2048, hop_length=512, init_win_length=2048,
+                 frequency_min=0, frequency_max=None, n_mels=128):
+        super(MFCCLayer, self).__init__()
+        self.sr = sr
+        self.n_mfcc = n_mfcc
+        self.n_fft = n_fft
+        self.hop_length = hop_length
+        # TODO 优化
+        self.frequency_min = frequency_min
+        self.frequency_max = frequency_max if frequency_max is not None else sr // 2
+        self.n_mels = n_mels
+        
+        # 将 win_length 设置为可训练参数
+        self.win_length_factor = nn.Parameter(torch.tensor(float(init_win_length) / self.n_fft))
+        
+    def get_win_length(self):
+        # 确保 win_length 在合理范围内
+        win_length_factor = torch.sigmoid(self.win_length_factor) * 0.9 + 0.1  # 范围在 0.1 到 1.0 之间
+        win_length_factor_item = win_length_factor.item()
+        win_length = int(win_length_factor_item * self.n_fft)
+        return win_length
+        
+    def forward(self, x):
+        """
+        输入 x: 音频波形 [batch_size, audio_length]
+        输出: MFCC 特征 [batch_size, n_mfcc, time_steps]
+        """
+        batch_size = x.shape[0]
+        win_length = self.get_win_length()
+        
+        # 将张量转换为 numpy 数组以便使用 librosa
+        device = x.device
+        x_np = x.cpu().numpy()
+        
+        # 存储批次处理结果
+        mfcc_list = []
+        
+        for i in range(batch_size):
+            mel_spectrogram = librosa.feature.melspectrogram(y=x_np[i], sr=self.sr, n_mels=128)
+
+            mfcc = librosa.feature.mfcc(S=librosa.power_to_db(mel_spectrogram), n_mfcc=self.n_mfcc, win_length=win_length)
+            normalized_mfcc = librosa.util.normalize(mfcc)
+
+            mfcc_list.append(normalized_mfcc)
+        
+        # 将结果转换回 PyTorch 张量
+        mfcc_list = np.array(mfcc_list)
+        mfcc_list_tensor = torch.from_numpy(mfcc_list).float().to(device)
+        
+        return mfcc_list_tensor
+
+#
+# X = torch.randn(1, 88200).cuda()
+# model = MFCCLayer().cuda()
+# print(model(X).shape)

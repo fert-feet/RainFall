@@ -5,7 +5,7 @@ import numpy as np
 
 from utils import config
 import torch
-from utils.new_dataloader import get_train_data_loaders, get_test_data_loaders
+from utils.new_dataloader import train_data_loaders, test_data_loaders, get_train_data_loaders, get_test_data_loaders
 from model.base_model import *
 from nets.baseline_training import get_lr_scheduler, set_optimizer_lr
 import torch.optim as optim
@@ -29,20 +29,33 @@ num_epochs = config.NUM_EPOCHES
 batch_size = config.BATCH_SIZE
 learning_rate = config.LEARNING_RATE
 single_feature = config.NAME_FEATURES_PROJECT
+is_use_origin_data = config.USE_ORIGIN_DATA
 
-data_paths = {
-    'train_data_paths': {
-        single_feature: f'./data/{getattr(config, f"NAME_{single_feature.upper()}_TRAIN_FEATURES_FILE")}.npy'
-    },
-    'train_label_path': './data/train_labels.csv',
-    'test_data_paths': {
-        single_feature: f'./data/{getattr(config, f"NAME_{single_feature.upper()}_TEST_FEATURES_FILE")}.npy'
-    },
-    'test_label_path': './data/test_labels.csv'
-}
+# TODO 放进 config里
 
-train_data_loaders = get_train_data_loaders(data_paths, batch_size)
-test_data_loaders = get_test_data_loaders(data_paths, batch_size)
+if is_use_origin_data:
+    data_paths = {
+        'train_data_paths': {
+            single_feature: '../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_train/'
+        },
+        'test_data_paths': {
+            single_feature: '../SARIDDATA/SARID/split/audio_without_background_split_nocoverage_test/'
+        }
+    }
+else:
+    data_paths = {
+        'train_data_paths': {
+            single_feature: f'./data/{getattr(config, f"NAME_{single_feature.upper()}_TRAIN_FEATURES_FILE")}.npy'
+        },
+        'train_label_path': './data/train_labels.csv',
+        'test_data_paths': {
+            single_feature: f'./data/{getattr(config, f"NAME_{single_feature.upper()}_TEST_FEATURES_FILE")}.npy'
+        },
+        'test_label_path': './data/test_labels.csv'
+    }
+
+train_data_loaders = get_train_data_loaders(data_paths, is_use_origin_data, batch_size)
+test_data_loaders = get_test_data_loaders(data_paths, is_use_origin_data, batch_size)
 
 feature_train_loader = train_data_loaders[single_feature]
 feature_test_dataset= test_data_loaders[single_feature + '_dataset']

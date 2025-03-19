@@ -21,10 +21,10 @@ NAME_FEATURES_PNCC = "npcc"
 NAME_FEATURES_SPEC = "spec"
 NAME_FEATURES_WAVE = "wave"
 NAME_FEATURES_WAVELET = "wavelet"
+NAME_FEATURES_ORIGIN = "origin"
 NAME_FEATURES_PROJECT = NAME_FEATURES_MFCC
 NUM_N_FEATURE = N_MFCC
 
-# TODO change label files name to global, because mel and mfcc share same label file
 
 NAME_TRAIN_LABEL_FILE = "train_label"
 NAME_TEST_LABEL_FILE = "test_label"
@@ -48,3 +48,6 @@ NAME_WAVELET_TEST_FEATURES_FILE = f"test_features_{NAME_FEATURES_WAVELET}_n_{N_L
 # log file
 NAME_MODEL_PERFORMANCE_FILE = f"model_{NAME_MODEL_PROJECT}_feature_{NAME_FEATURES_PROJECT}_epoch_{NUM_EPOCHES}_batch_{BATCH_SIZE}"
 NAME_MODEL_PERFORMANCE_BEST_FILE = f"model_{NAME_MODEL_PROJECT}_feature_{NAME_FEATURES_PROJECT}_epoch_{NUM_EPOCHES}_batch_{BATCH_SIZE}_best"
+
+# whether to use the origin data, default false, means use extracted features, which is filed
+USE_ORIGIN_DATA = False

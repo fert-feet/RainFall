@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from transformers import Wav2Vec2Model
-# from torchsummary import summary
-from .general_net import *
-from .paper_model.iTransformer import Model as iTransformer
+from torchsummary import summary
+from general_net import *
+from paper_model.iTransformer import Model as iTransformer
 
 
 # __all__ = ['Ser_Model']
@@ -219,6 +219,22 @@ class CoLSTMTransformerResidualModel(nn.Module):
         out = self.fc2(out)
         return out
 
+class ChangeWinLengthCoLSTMTransformerResidualModel(nn.Module):
+    def __init__(self, hidden_layer_sizes=None, n_features=40, n_head=5, init_win_length=2048):
+        super(ChangeWinLengthCoLSTMTransformerResidualModel, self).__init__()
+
+        self.mfcc_layer = MFCCLayer(n_mfcc=n_features, init_win_length=init_win_length)
+
+        self.lstm_transformer_residual_layer = CoLSTMTransformerResidualModel(n_features=n_features, n_head=n_head, hidden_layer_sizes=hidden_layer_sizes)
+
+    def forward(self, x):
+        mfcc_win_length_train_layer_output = self.mfcc_layer(x)
+
+        output = self.lstm_transformer_residual_layer(mfcc_win_length_train_layer_output)
+        return output
+
+
+
 class SingleITransformerModel(nn.Module):
     def __init__(self, seq_len=173, turn_to_d_model=40, n_heads=5):
         super(SingleITransformerModel, self).__init__()
@@ -232,6 +248,6 @@ class SingleITransformerModel(nn.Module):
 
 
 # input_m = torch.randn(1, 40, 173).cuda()
-# model = CoLSTMTransformerModel(n_features=40, n_head=40).to('cuda')
+# model = CoLSTMTransformerModel().to('cuda')
 # summary(model, input_m)
   
