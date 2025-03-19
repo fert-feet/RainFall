@@ -8,8 +8,8 @@ import torch.nn.functional as F
 
 from transformers import Wav2Vec2Model
 from torchsummary import summary
-from general_net import *
-from paper_model.iTransformer import Model as iTransformer
+from .general_net import *
+from .paper_model.iTransformer import Model as iTransformer
 
 
 # __all__ = ['Ser_Model']
